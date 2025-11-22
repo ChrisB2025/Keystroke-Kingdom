@@ -1,0 +1,408 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Keystroke Kingdom v6.0 - Economic Strategy Game</title>
+    <link rel="stylesheet" href="{% static 'game/game.css' %}">
+    <style>
+        /* Additional Django-specific styles */
+        .auth-bar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .auth-bar .username {
+            font-weight: bold;
+            color: #012169;
+            margin-right: 10px;
+        }
+
+        .auth-bar a {
+            color: #012169;
+            text-decoration: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .auth-bar a:hover {
+            background: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Authentication Bar -->
+    {% if user.is_authenticated %}
+    <div class="auth-bar">
+        <span class="username">{{ user.username }}</span>
+        <a href="/admin/logout/">Logout</a>
+    </div>
+    {% else %}
+    <div class="auth-bar">
+        <a href="/admin/login/">Login</a>
+    </div>
+    {% endif %}
+
+    <!-- Game Content -->
+    <div class="game-container" id="gameContainer">
+        <!-- UPPER PANEL: Stats and Day Counter -->
+        <div class="upper-panel">
+            <div class="header-compact">
+                <div class="title-welcome-group">
+                    <div class="title-row">
+                        <h1 class="title">Keystroke Kingdom</h1>
+                        <span class="version-badge">v6.0</span>
+                        <span class="day-counter" id="dayCounter">Day 1 / 30</span>
+                    </div>
+                    <p class="welcome-text">Master MMT. Balance employment, inflation, and public services through monetary sovereignty.</p>
+                </div>
+                <button class="highscore-button" onclick="showHighScores()">&#127942; High Scores</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box employment-box">
+                    <div class="stat-label">Employment</div>
+                    <div class="stat-value good" id="employmentStat">85%</div>
+                </div>
+                <div class="stat-box inflation-box">
+                    <div class="stat-label">Inflation</div>
+                    <div class="stat-value good" id="inflationStat">2.0%</div>
+                </div>
+                <div class="stat-box capacity-box">
+                    <div class="stat-label">Capacity Used</div>
+                    <div class="stat-value good" id="capacityStat">85%</div>
+                </div>
+                <div class="stat-box tax-box">
+                    <div class="stat-label">Tax Rate</div>
+                    <div class="stat-value" id="taxRateStat">20%</div>
+                </div>
+                <div class="stat-box policy-box">
+                    <div class="stat-label">Policy Rate</div>
+                    <div class="stat-value" id="policyRateStat">2.0%</div>
+                </div>
+                <div class="stat-box services-box">
+                    <div class="stat-label">Services</div>
+                    <div class="stat-value" id="servicesStat">50</div>
+                </div>
+                <div class="stat-box spending-box">
+                    <div class="stat-label">Pub Spend</div>
+                    <div class="stat-value" id="pubSpend">$40B</div>
+                </div>
+                <div class="stat-box credit-box">
+                    <div class="stat-label">Pvt Credit</div>
+                    <div class="stat-value" id="pvtCredit">$50B</div>
+                </div>
+                <div class="stat-box demand-box">
+                    <div class="stat-label">Agg Demand</div>
+                    <div class="stat-value" id="aggDemand">$69B</div>
+                </div>
+            </div>
+
+            <div class="action-controls">
+                <div class="actions-badge" id="actionsDisplay">3 actions left</div>
+                <button class="next-button" id="nextButton" onclick="nextTurn()">Next Day &#10145;</button>
+            </div>
+        </div>
+
+        <!-- LOWER PANEL: Locations and Actions -->
+        <div class="lower-panel">
+            <div class="capacity-indicators-wrapper">
+                <div class="capacity-section">
+                    <h3>Capacity Status</h3>
+                    <div class="capacity-bars">
+                        <div class="capacity-item">
+                            <span class="capacity-label">Energy</span>
+                            <div class="capacity-bar">
+                                <div class="capacity-fill" id="energyBar" style="width: 70%">70</div>
+                            </div>
+                        </div>
+                        <div class="capacity-item">
+                            <span class="capacity-label">Skills</span>
+                            <div class="capacity-bar">
+                                <div class="capacity-fill" id="skillsBar" style="width: 70%">70</div>
+                            </div>
+                        </div>
+                        <div class="capacity-item">
+                            <span class="capacity-label">Logistics</span>
+                            <div class="capacity-bar">
+                                <div class="capacity-fill" id="logisticsBar" style="width: 70%">70</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="policy-indicators">
+                    <div class="indicator-btn" id="jgIndicator">Job Guarantee: OFF</div>
+                    <div class="indicator-btn" id="yieldControlIndicator">Yield Control: OFF</div>
+                    <div class="indicator-btn" id="iorIndicator">IOR: OFF</div>
+                </div>
+            </div>
+
+            <div class="content-area-wrapper">
+                <div class="location-buttons">
+                    <button class="location-btn active" onclick="selectLocation('treasury', event)" title="Treasury">&#127963;&#65039;</button>
+                    <button class="location-btn" onclick="selectLocation('central-bank', event)" title="Central Bank">&#127974;</button>
+                    <button class="location-btn" onclick="selectLocation('demand', event)" title="Demand">&#128722;</button>
+                    <button class="location-btn" onclick="selectLocation('investment', event)" title="Investment">&#127959;&#65039;</button>
+                    <button class="location-btn" onclick="selectLocation('employment', event)" title="Employment">&#128188;</button>
+                    <button class="location-btn" onclick="selectLocation('trade', event)" title="Trade">&#127760;</button>
+                </div>
+
+                <div class="content-area" id="contentArea">
+                    <div class="location-content active" id="treasury-content">
+                        <h2 class="location-title">&#127963;&#65039; Treasury</h2>
+                        <div class="actions-list">
+                            <button class="action-card" onclick="adjustTax(5)" title="Raise income tax rate by 5%">
+                                <div class="action-icon">&#128200;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Raise Taxes</div>
+                                    <div class="action-desc">+5% income tax</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="adjustTax(-5)" title="Lower income tax rate by 5%">
+                                <div class="action-icon">&#128201;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Cut Taxes</div>
+                                    <div class="action-desc">-5% income tax</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="publicSpending('education', 10)" title="Spend $10B on education">
+                                <div class="action-icon">&#127891;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Fund Education</div>
+                                    <div class="action-desc">$10B spending</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="publicSpending('healthcare', 10)" title="Spend $10B on healthcare">
+                                <div class="action-icon">&#127973;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Fund Healthcare</div>
+                                    <div class="action-desc">$10B spending</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="publicSpending('infrastructure', 10)" title="Spend $10B on infrastructure">
+                                <div class="action-icon">&#128679;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Infrastructure</div>
+                                    <div class="action-desc">$10B spending</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="location-content" id="central-bank-content">
+                        <h2 class="location-title">&#127974; Central Bank</h2>
+                        <div class="actions-list">
+                            <button class="action-card" onclick="adjustPolicyRate(0.5)" title="Raise policy rate by 0.5%">
+                                <div class="action-icon">&#128200;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Raise Rate</div>
+                                    <div class="action-desc">+0.5% policy rate</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="adjustPolicyRate(-0.5)" title="Lower policy rate by 0.5%">
+                                <div class="action-icon">&#128201;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Cut Rate</div>
+                                    <div class="action-desc">-0.5% policy rate</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="toggleYieldCurveControl()" title="Control long-term interest rates">
+                                <div class="action-icon">&#128208;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Yield Control</div>
+                                    <div class="action-desc">Toggle YCC</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="toggleIOR()" title="Pay interest on reserves">
+                                <div class="action-icon">&#128176;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Interest on Reserves</div>
+                                    <div class="action-desc">Toggle IOR</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="location-content" id="demand-content">
+                        <h2 class="location-title">&#128722; Demand Management</h2>
+                        <div class="actions-list">
+                            <button class="action-card" onclick="publicSpending('consumption', 15)" title="Direct cash payments to households">
+                                <div class="action-icon">&#128181;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Cash Transfers</div>
+                                    <div class="action-desc">$15B to households</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="publicSpending('stimulus', 20)" title="Broad fiscal stimulus program">
+                                <div class="action-icon">&#128640;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Fiscal Stimulus</div>
+                                    <div class="action-desc">$20B program</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="publicSpending('deficit', -15)" title="Reduce spending to cool demand">
+                                <div class="action-icon">&#10052;&#65039;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Cool Demand</div>
+                                    <div class="action-desc">-$15B spending</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="location-content" id="investment-content">
+                        <h2 class="location-title">&#127959;&#65039; Investment</h2>
+                        <div class="actions-list">
+                            <button class="action-card" onclick="investInCapacity('energy')" title="Invest $20B in energy infrastructure">
+                                <div class="action-icon">&#9889;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Energy Infrastructure</div>
+                                    <div class="action-desc">$20B investment</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="investInCapacity('skills')" title="Invest $20B in education and training">
+                                <div class="action-icon">&#128218;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Skills Development</div>
+                                    <div class="action-desc">$20B investment</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="investInCapacity('logistics')" title="Invest $20B in transport and logistics">
+                                <div class="action-icon">&#128666;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Logistics Network</div>
+                                    <div class="action-desc">$20B investment</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="publicSpending('green', 25)" title="Green transition and sustainability">
+                                <div class="action-icon">&#127793;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Green Transition</div>
+                                    <div class="action-desc">$25B program</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="location-content" id="employment-content">
+                        <h2 class="location-title">&#128188; Employment Policy</h2>
+                        <div class="actions-list">
+                            <button class="action-card" onclick="toggleJobGuarantee()" title="Ensure employment for all willing to work">
+                                <div class="action-icon">&#129309;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Job Guarantee</div>
+                                    <div class="action-desc">Toggle JG program</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="publicSpending('training', 15)" title="Invest in worker training programs">
+                                <div class="action-icon">&#128295;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Training Programs</div>
+                                    <div class="action-desc">$15B investment</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="publicSpending('wages', 10)" title="Public sector wage increase">
+                                <div class="action-icon">&#128178;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Raise Public Wages</div>
+                                    <div class="action-desc">$10B increase</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="location-content" id="trade-content">
+                        <h2 class="location-title">&#127760; Trade & External</h2>
+                        <div class="actions-list">
+                            <button class="action-card" onclick="publicSpending('exports', 15)" title="Support export industries">
+                                <div class="action-icon">&#128674;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Export Support</div>
+                                    <div class="action-desc">$15B program</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="publicSpending('domestic', 15)" title="Support domestic production">
+                                <div class="action-icon">&#127981;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Domestic Industry</div>
+                                    <div class="action-desc">$15B support</div>
+                                </div>
+                            </button>
+                            <button class="action-card" onclick="publicSpending('imports', -10)" title="Import substitution initiative">
+                                <div class="action-icon">&#128275;</div>
+                                <div class="action-text">
+                                    <div class="action-name">Import Substitution</div>
+                                    <div class="action-desc">-$10B imports</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div class="modal" id="gameOverModal">
+        <div class="modal-content">
+            <h2 id="gameOverTitle">Game Over</h2>
+            <div id="gameOverMessage"></div>
+            <div id="gameOverStats"></div>
+            <button class="modal-button" onclick="location.reload()">Play Again</button>
+        </div>
+    </div>
+
+    <!-- High Scores Modal -->
+    <div class="modal" id="highScoresModal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="margin: 0;">&#127942; Leaderboard</h2>
+                <button class="modal-button" onclick="closeHighScores()" style="padding: 6px 12px;">Close</button>
+            </div>
+            <div id="highScoresList"></div>
+        </div>
+    </div>
+
+    <!-- Economic Advisor Modal -->
+    <div class="modal" id="advisorModal">
+        <div class="modal-content advisor-panel">
+            <div class="advisor-header">
+                <h3>&#128100; Economic Advisor</h3>
+                <button class="modal-button" onclick="closeAdvisor()">Close</button>
+            </div>
+            <div id="conversationHistory" class="conversation-history"></div>
+            <div class="advisor-input-area">
+                <input type="text" id="advisorInput" placeholder="Ask your economic advisor..." />
+                <button class="modal-button" onclick="askAdvisor()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Advisor Button -->
+    <button class="advisor-fab" onclick="openAdvisor()" title="Talk to Economic Advisor">
+        &#128100;
+    </button>
+
+    <!-- Pass Django context to JavaScript -->
+    <script>
+        window.DJANGO_CONFIG = {
+            isAuthenticated: {{ user.is_authenticated|lower }},
+            username: "{{ user.username|escapejs }}",
+            csrfToken: "{{ csrf_token }}"
+        };
+    </script>
+
+    <!-- Include game JavaScript -->
+    <script src="{% static 'game/game.js' %}"></script>
+</body>
+</html>
