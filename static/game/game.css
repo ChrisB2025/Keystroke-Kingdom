@@ -1002,14 +1002,45 @@
             font-size: 18px;
         }
 
+        .quick-prompts {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #fef3c7;
+            border-radius: 8px;
+            border: 1px solid #fbbf24;
+        }
+
+        .quick-prompt-btn {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .quick-prompt-btn:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        .quick-prompt-btn:active {
+            transform: scale(0.98);
+            background: #012169;
+            color: white;
+        }
+
         .conversation-history {
-            max-height: 400px;
+            max-height: 300px;
             overflow-y: auto;
             margin-bottom: 16px;
             padding: 12px;
             background: #f8fafc;
             border-radius: 8px;
-            min-height: 200px;
+            min-height: 150px;
         }
 
         .advisor-message {
