@@ -454,10 +454,9 @@ async function callClaudeAPIProxy(messages) {
 
         function toggleJobGuarantee() {
             if (!useAction()) return;
-            
+
             gameState.jgEnabled = !gameState.jgEnabled;
             updateDisplay();
-            selectLocation('employment');
         }
 
         function adjustTax(amount) {
@@ -513,18 +512,16 @@ async function callClaudeAPIProxy(messages) {
 
         function toggleYieldControl() {
             if (!useAction()) return;
-            
+
             gameState.yieldControl = !gameState.yieldControl;
             updateDisplay();
-            selectLocation('central-bank');
         }
 
         function toggleIOR() {
             if (!useAction()) return;
-            
+
             gameState.iorEnabled = !gameState.iorEnabled;
             updateDisplay();
-            selectLocation('central-bank');
         }
 
         function regulatePrivateCredit(type) {
@@ -893,43 +890,124 @@ User Question: ${userMessage}`
             conversationHistory.appendChild(typingDiv);
             conversationHistory.scrollTop = conversationHistory.scrollHeight;
 
-            try {
-                // Build context about current game state
-                const gameContext = buildGameContext();
+            // Simulate thinking delay
+            await new Promise(resolve => setTimeout(resolve, 800));
 
-                // Call Claude API through Django proxy
-                const messages = [
-                    {
-                        role: "user",
-                        content: `You are an Economic Advisor for Keystroke Kingdom, an MMT-based economic strategy game. Help the player understand their current situation and make informed decisions based on Modern Monetary Theory principles.
+            // Generate response based on game state
+            const response = generateAdvisorResponse(message);
 
-Current Game State:
-${gameContext}
+            // Remove typing indicator
+            typingDiv.remove();
 
-MMT Principles:
-${mmtKnowledge}
+            addAdvisorMessage('assistant', response);
+        }
 
-Be concise (2-3 sentences), reference specific game data, and connect advice to MMT principles. Guide thinking rather than giving away optimal strategies.
+        function askQuickAdvisorQuestion(type) {
+            const questions = {
+                'situation': "What's happening in my economy right now? Should I be worried?",
+                'next': "What should I prioritize in my next actions?",
+                'mmt': "Can you explain the key MMT principles in this game?",
+                'inflation': "How do I manage inflation risk?"
+            };
 
-Player Question: ${message}`
-                    }
-                ];
-
-                const response = await callClaudeAPIProxy(messages);
-
-                // Remove typing indicator
-                typingDiv.remove();
-
-                if (response.success && response.message) {
-                    addAdvisorMessage('assistant', response.message);
-                } else {
-                    addAdvisorMessage('assistant', response.error || 'Sorry, I had trouble processing that. Please try again.');
-                }
-            } catch (error) {
-                // Remove typing indicator
-                typingDiv.remove();
-                addAdvisorMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+            const question = questions[type];
+            if (question) {
+                document.getElementById('advisorInput').value = question;
+                askAdvisor();
             }
+        }
+
+        function generateAdvisorResponse(question) {
+            const totalCapacity = Math.min(
+                gameState.capacity.energy,
+                gameState.capacity.skills,
+                gameState.capacity.logistics
+            );
+            const aggDemand = gameState.publicSpending + gameState.privateCredit + gameState.netExports;
+            const demandGap = aggDemand - totalCapacity;
+
+            const q = question.toLowerCase();
+
+            // Analyze current situation
+            const unemploymentRate = 100 - gameState.employment;
+            const inflationHigh = gameState.inflation > 3;
+            const inflationLow = gameState.inflation < 2;
+            const capacityTight = gameState.capacityUsed > 90;
+            const capacitySlack = gameState.capacityUsed < 75;
+
+            // Current situation questions
+            if (q.includes('situation') || q.includes('economy') || q.includes('happening') || q.includes('worried')) {
+                let response = `Your economy is currently running at ${gameState.capacityUsed.toFixed(0)}% capacity with ${gameState.employment.toFixed(0)}% employment and ${gameState.inflation.toFixed(1)}% inflation. `;
+
+                if (inflationHigh && capacityTight) {
+                    response += `Inflation is above target because demand ($${aggDemand.toFixed(0)}B) exceeds your productive capacity (${totalCapacity.toFixed(0)} units). This is the real resource constraint MMT talks about. Consider cooling demand with spending cuts or tax increases, or invest in capacity expansion.`;
+                } else if (unemploymentRate > 10 && !gameState.jgEnabled) {
+                    response += `With ${unemploymentRate.toFixed(0)}% unemployment, you have significant slack in the economy. MMT says you're under-utilizing real resources. You can safely increase public spending without causing inflation, or enable the Job Guarantee to provide a buffer stock of employed workers.`;
+                } else if (inflationLow && capacitySlack) {
+                    response += `Your economy has room to grow! With low inflation and spare capacity, you can increase aggregate demand through public spending. Remember: the constraint is real resources, not money.`;
+                } else {
+                    response += `You're in a relatively balanced position. Focus on maintaining stability while building long-term capacity through investment in energy, skills, and logistics.`;
+                }
+                return response;
+            }
+
+            // Next steps / what to do
+            if (q.includes('next') || q.includes('priorit') || q.includes('should i do')) {
+                let advice = [];
+
+                if (unemploymentRate > 5 && !gameState.jgEnabled && gameState.actionsRemaining > 0) {
+                    advice.push("Enable the Job Guarantee to provide full employment and establish a price anchor through the fixed JG wage");
+                }
+
+                if (demandGap > 15 && inflationHigh) {
+                    advice.push("Your inflation is high because demand exceeds capacity. Either reduce spending/raise taxes, or invest in capacity to expand what the economy can produce");
+                } else if (demandGap < -10 && unemploymentRate > 10) {
+                    advice.push("Increase public spending to boost demand and employment. You have spare capacity, so this won't cause inflation");
+                }
+
+                if (totalCapacity < 80) {
+                    advice.push("Invest in capacity (energy, skills, logistics) to expand your economy's productive potential");
+                }
+
+                if (advice.length === 0) {
+                    advice.push("Continue monitoring your economy. Consider building capacity for future growth or fine-tuning your tax and spending levels");
+                }
+
+                return advice.slice(0, 2).join('. ') + '.';
+            }
+
+            // MMT explanation
+            if (q.includes('mmt') || q.includes('modern monetary') || q.includes('principle') || q.includes('theory')) {
+                return `Key MMT insights: (1) As a currency issuer, government doesn't need to "find money" before spending - spending creates money. (2) Taxes delete money and free up real resources; they don't fund spending. (3) The real constraint is productive capacity, not money - inflation occurs when demand exceeds what the economy can produce. (4) Job Guarantee provides a buffer stock of employed workers at a fixed wage, acting as both an automatic stabilizer and a price anchor. Your current challenge is managing these principles to achieve ${100 - unemploymentRate < 95 ? 'full employment' : 'price stability'}.`;
+            }
+
+            // Inflation questions
+            if (q.includes('inflation') || q.includes('price')) {
+                if (gameState.inflation > 4) {
+                    return `Your inflation is ${gameState.inflation.toFixed(1)}%, above the target. This happens when aggregate demand ($${aggDemand.toFixed(0)}B) exceeds productive capacity (${totalCapacity.toFixed(0)} units). Solutions: (1) Reduce demand via spending cuts or tax increases, (2) Expand capacity through investment, or (3) Enable Job Guarantee for wage stabilization. MMT says inflation is about real resources, not money supply.`;
+                } else if (gameState.inflation < 1) {
+                    return `Your inflation is very low at ${gameState.inflation.toFixed(1)}%, suggesting demand is well below capacity. You can safely increase public spending to boost employment and economic activity without risking inflation. MMT shows that the constraint is real productive capacity, not monetary limits.`;
+                } else {
+                    return `Your inflation is healthy at ${gameState.inflation.toFixed(1)}%. To keep it stable: (1) Monitor capacity utilization (currently ${gameState.capacityUsed.toFixed(0)}%), (2) Invest in capacity to allow higher demand without inflation, (3) Use Job Guarantee as a buffer stock to stabilize wages. Remember: inflation comes from demand exceeding real resources, not from money creation itself.`;
+                }
+            }
+
+            // Capacity questions
+            if (q.includes('capacity') || q.includes('invest')) {
+                return `Your capacity utilization is ${gameState.capacityUsed.toFixed(0)}% with bottleneck capacity at ${totalCapacity.toFixed(0)} units. ${capacityTight ? 'This is quite high - invest in energy, skills, and logistics to expand capacity and enable higher sustainable demand.' : 'You have room to expand demand.'} Remember: capacity determines how hot you can run the economy without inflation. More capacity = more prosperity without price pressure.`;
+            }
+
+            // Job Guarantee questions
+            if (q.includes('job') || q.includes('employment') || q.includes('jg')) {
+                if (gameState.jgEnabled) {
+                    return `Job Guarantee is active, providing employment for ${gameState.jgPoolSize.toFixed(1)}% of the workforce at $${gameState.jgWage}/hour. This creates a buffer stock that automatically expands in downturns and contracts in upswings, stabilizing the economy. The fixed wage acts as a price anchor, helping control inflation while ensuring full employment.`;
+                } else {
+                    return `With ${unemploymentRate.toFixed(0)}% unemployment, you could enable the Job Guarantee. MMT shows that JG provides a buffer stock of employed workers at a fixed wage, which: (1) ensures full employment, (2) acts as an automatic stabilizer, and (3) provides a price anchor through the fixed wage. It's countercyclical - the pool grows in downturns and shrinks in booms.`;
+                }
+            }
+
+            // Default general advice
+            return `Looking at your economy (Day ${gameState.currentDay}/30): Employment is ${gameState.employment.toFixed(0)}%, inflation is ${gameState.inflation.toFixed(1)}%, and you're using ${gameState.capacityUsed.toFixed(0)}% of capacity. ${inflationHigh ? 'Focus on cooling demand or expanding capacity.' : unemploymentRate > 5 ? 'You can safely increase spending to boost employment.' : 'Keep building capacity for sustainable growth.'} Remember: MMT shows that real resources are the constraint, not money.`;
         }
 
         function addAdvisorMessage(role, content) {
@@ -1003,5 +1081,6 @@ Actions Remaining: ${gameState.actionsRemaining}`;
         window.openAdvisor = openAdvisor;
         window.closeAdvisor = closeAdvisor;
         window.askAdvisor = askAdvisor;
+        window.askQuickAdvisorQuestion = askQuickAdvisorQuestion;
 
         init();

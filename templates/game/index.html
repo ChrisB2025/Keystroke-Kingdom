@@ -9,15 +9,17 @@
     <style>
         /* Additional Django-specific styles */
         .auth-bar {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 8px 12px;
+            display: none; /* Hidden by default - only shown in game over modal */
+        }
+
+        .auth-bar.show-in-modal {
+            display: block;
+            margin-top: 16px;
+            padding: 12px;
+            background: #f1f5f9;
             border-radius: 6px;
-            font-size: 12px;
-            z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 13px;
+            text-align: center;
         }
 
         .auth-bar .username {
@@ -29,9 +31,12 @@
         .auth-bar a {
             color: #012169;
             text-decoration: none;
-            padding: 4px 8px;
+            padding: 6px 12px;
             border-radius: 4px;
             transition: background 0.2s;
+            background: white;
+            border: 1px solid #cbd5e1;
+            display: inline-block;
         }
 
         .auth-bar a:hover {
@@ -358,6 +363,15 @@
             <h2 id="gameOverTitle">Game Over</h2>
             <div id="gameOverMessage"></div>
             <div id="gameOverStats"></div>
+
+            <!-- Auth prompt for high score submission -->
+            {% if not user.is_authenticated %}
+            <div class="auth-bar show-in-modal">
+                <p style="margin: 0 0 8px 0; color: #64748b;">Want to save your score to the leaderboard?</p>
+                <a href="/admin/login/?next=/">Login</a>
+            </div>
+            {% endif %}
+
             <button class="modal-button" onclick="location.reload()">Play Again</button>
         </div>
     </div>
@@ -380,6 +394,18 @@
                 <h3>&#128100; Economic Advisor</h3>
                 <button class="modal-button" onclick="closeAdvisor()">Close</button>
             </div>
+
+            <!-- Quick question prompts -->
+            <div class="quick-prompts" id="quickPrompts">
+                <p style="font-size: 12px; color: #64748b; margin: 0 0 8px 0;">Quick questions:</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button class="quick-prompt-btn" onclick="askQuickAdvisorQuestion('situation')">Current Situation?</button>
+                    <button class="quick-prompt-btn" onclick="askQuickAdvisorQuestion('next')">What's Next?</button>
+                    <button class="quick-prompt-btn" onclick="askQuickAdvisorQuestion('mmt')">Explain MMT</button>
+                    <button class="quick-prompt-btn" onclick="askQuickAdvisorQuestion('inflation')">Inflation Risk?</button>
+                </div>
+            </div>
+
             <div id="conversationHistory" class="conversation-history"></div>
             <div class="advisor-input-area">
                 <input type="text" id="advisorInput" placeholder="Ask your economic advisor..." />
