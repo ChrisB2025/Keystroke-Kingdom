@@ -11,6 +11,35 @@
             height: 100vh;
             background: linear-gradient(135deg, #012169 0%, #C8102E 100%);
         }
+
+        /* Economic Narrative Notification */
+        .economic-narrative {
+            position: fixed;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 600px;
+            width: 90%;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            z-index: 3000;
+            transition: top 0.5s ease-in-out;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .economic-narrative.show {
+            top: 20px;
+        }
+
+        .economic-narrative strong {
+            color: #fbbf24;
+            font-weight: 600;
+        }
         
         .game-container {
             width: 100vw;
@@ -985,15 +1014,18 @@
         .advisor-panel {
             max-width: 600px;
             width: 90%;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .advisor-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
             padding-bottom: 12px;
             border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
         }
 
         .advisor-header h3 {
@@ -1003,11 +1035,12 @@
         }
 
         .quick-prompts {
-            margin-bottom: 16px;
             padding: 12px;
             background: #fef3c7;
             border-radius: 8px;
             border: 1px solid #fbbf24;
+            flex-shrink: 0;
+            margin-top: 12px;
         }
 
         .quick-prompt-btn {
@@ -1034,13 +1067,14 @@
         }
 
         .conversation-history {
-            max-height: 300px;
+            flex: 1;
             overflow-y: auto;
-            margin-bottom: 16px;
             padding: 12px;
             background: #f8fafc;
             border-radius: 8px;
             min-height: 150px;
+            max-height: none;
+            margin: 12px 0;
         }
 
         .advisor-message {
@@ -1067,6 +1101,7 @@
         .advisor-input-area {
             display: flex;
             gap: 8px;
+            flex-shrink: 0;
         }
 
         .advisor-input-area input {
