@@ -57,9 +57,6 @@
     </div>
     {% endif %}
 
-    <!-- Economic Narrative Notification -->
-    <div class="economic-narrative" id="economicNarrative"></div>
-
     <!-- Game Content -->
     <div class="game-container" id="gameContainer">
         <!-- UPPER PANEL: Stats and Day Counter -->
@@ -123,6 +120,11 @@
 
         <!-- LOWER PANEL: Locations and Actions -->
         <div class="lower-panel">
+            <!-- Economic Narrative integrated into game UI -->
+            <div class="economic-narrative-panel" id="economicNarrative">
+                <strong>Day 1:</strong> Welcome to Keystroke Kingdom! You control a sovereign currency. Use MMT principles to achieve full employment and price stability.
+            </div>
+
             <div class="capacity-indicators-wrapper">
                 <div class="capacity-section">
                     <h3>Capacity Status</h3>
@@ -224,7 +226,7 @@
                                     <div class="action-desc">-0.5% policy rate</div>
                                 </div>
                             </button>
-                            <button class="action-card" onclick="toggleYieldCurveControl()" title="Control long-term interest rates">
+                            <button class="action-card" onclick="toggleYieldControl()" title="Control long-term interest rates">
                                 <div class="action-icon">&#128208;</div>
                                 <div class="action-text">
                                     <div class="action-name">Yield Control</div>
