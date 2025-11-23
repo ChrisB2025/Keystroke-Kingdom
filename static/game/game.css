@@ -825,6 +825,261 @@
             transform: scale(0.98);
         }
 
+        /* Content Area */
+        .content-area {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 6px;
+            padding: 12px;
+            overflow-y: auto;
+            max-height: 55vh;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+        }
+
+        .location-content {
+            display: none;
+        }
+
+        .location-content.active {
+            display: block;
+        }
+
+        .location-title {
+            font-size: 16px;
+            margin: 0 0 12px 0;
+            color: #2d3748;
+        }
+
+        .actions-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px;
+        }
+
+        .action-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .action-card:hover {
+            border-color: #012169;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-card:active {
+            transform: translateY(0);
+            background: #012169;
+            color: white;
+        }
+
+        .action-card:active .action-icon {
+            filter: brightness(0) invert(1);
+        }
+
+        .action-card:active .action-name,
+        .action-card:active .action-desc {
+            color: white;
+        }
+
+        .action-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .action-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .action-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 2px;
+        }
+
+        .action-desc {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        /* Modal Styling */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-button {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #012169 0%, #003399 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .modal-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Economic Advisor Styling */
+        .advisor-fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 999;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .advisor-fab:active {
+            transform: scale(0.95);
+        }
+
+        .advisor-panel {
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .advisor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .advisor-header h3 {
+            margin: 0;
+            color: #2d3748;
+            font-size: 18px;
+        }
+
+        .conversation-history {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            min-height: 200px;
+        }
+
+        .advisor-message {
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            max-width: 85%;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .advisor-message.user {
+            background: #012169;
+            color: white;
+            margin-left: auto;
+        }
+
+        .advisor-message.assistant {
+            background: white;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .advisor-input-area {
+            display: flex;
+            gap: 8px;
+        }
+
+        .advisor-input-area input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #64748b;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+            30% {
+                transform: translateY(-4px);
+                opacity: 1;
+            }
+        }
+
         /* Mobile Responsive */
         @media (max-width: 600px) {
             .two-column-layout {
@@ -837,6 +1092,10 @@
             }
 
             .action-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions-list {
                 grid-template-columns: 1fr;
             }
 
@@ -855,5 +1114,13 @@
 
             .location-btn-text {
                 font-size: 8px;
+            }
+
+            .advisor-panel {
+                width: 95%;
+            }
+
+            .conversation-history {
+                max-height: 300px;
             }
         }

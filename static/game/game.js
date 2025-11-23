@@ -409,17 +409,21 @@ async function callClaudeAPIProxy(messages) {
             }
         }
 
-        function governmentPurchase(sector) {
+        function publicSpending(sector, amount) {
             if (!useAction()) return;
-            
-            const spendingAmount = 5;
-            gameState.publicSpending += spendingAmount;
-            gameState.currencyIssued += spendingAmount;
-            
+
+            gameState.publicSpending += amount;
+            gameState.currencyIssued += amount;
+
             if (sector === 'healthcare') gameState.servicesScore += 2;
             if (sector === 'education') gameState.servicesScore += 2;
             if (sector === 'infrastructure') gameState.servicesScore += 1.5;
-            
+            if (sector === 'consumption') gameState.servicesScore += 1;
+            if (sector === 'stimulus') gameState.servicesScore += 1.5;
+            if (sector === 'training') gameState.servicesScore += 1.5;
+            if (sector === 'wages') gameState.servicesScore += 1;
+            if (sector === 'green') gameState.servicesScore += 2;
+
             updateDisplay();
         }
 
@@ -456,27 +460,21 @@ async function callClaudeAPIProxy(messages) {
             selectLocation('employment');
         }
 
-        function adjustTaxRate(value) {
-            if (!useAction()) {
-                document.getElementById('taxRateInput').value = gameState.taxRate;
-                document.getElementById('taxRateDisplay').textContent = gameState.taxRate;
-                return;
-            }
-            gameState.taxRate = parseInt(value);
-            
+        function adjustTax(amount) {
+            if (!useAction()) return;
+
+            gameState.taxRate = Math.max(0, Math.min(50, gameState.taxRate + amount));
+
             const totalTaxes = gameState.publicSpending * (gameState.taxRate / 100);
             gameState.taxesDeleted = totalTaxes;
-            
+
             updateDisplay();
         }
 
-        function setPolicyRate(value) {
-            if (!useAction()) {
-                document.getElementById('policyRateInput').value = gameState.policyRate;
-                document.getElementById('policyRateDisplay').textContent = gameState.policyRate.toFixed(1);
-                return;
-            }
-            gameState.policyRate = parseFloat(value);
+        function adjustPolicyRate(amount) {
+            if (!useAction()) return;
+
+            gameState.policyRate = Math.max(0, Math.min(10, gameState.policyRate + amount));
             updateDisplay();
         }
 
@@ -535,127 +533,35 @@ async function callClaudeAPIProxy(messages) {
         }
 
         function selectLocation(location, event) {
+            // Update button active state
             document.querySelectorAll('.location-btn').forEach(btn => btn.classList.remove('active'));
             if (event && event.target) {
                 event.target.closest('.location-btn').classList.add('active');
+            } else {
+                // If no event (programmatic call), find and activate the correct button
+                const buttons = document.querySelectorAll('.location-btn');
+                const locationIndex = {
+                    'treasury': 0,
+                    'central-bank': 1,
+                    'demand': 2,
+                    'investment': 3,
+                    'employment': 4,
+                    'trade': 5
+                };
+                if (buttons[locationIndex[location]]) {
+                    buttons[locationIndex[location]].classList.add('active');
+                }
             }
-            
-            const content = document.getElementById('mainContent');
-            
-            if (location === 'treasury') {
-                content.innerHTML = `
-                    <h2>&#127963;&#65039; Treasury - Tax Policy</h2>
-                    <div class="action-section">
-                        <div class="input-group">
-                            <label for="taxRateInput">Tax Rate: <span id="taxRateDisplay">${gameState.taxRate}</span>%</label>
-                            <input type="range" id="taxRateInput" min="0" max="50" value="${gameState.taxRate}" step="5" oninput="document.getElementById('taxRateDisplay').textContent = this.value" onchange="adjustTaxRate(this.value)">
-                        </div>
-                        <div class="advisor-note">
-                            <strong>MMT Insight:</strong> Taxes delete money and free up real resources. They don't fund spending - they control inflation by reducing aggregate demand.
-                        </div>
-                    </div>
-                `;
-            } else if (location === 'central-bank') {
-                content.innerHTML = `
-                    <h2>&#127974; Central Bank</h2>
-                    <div class="two-column-layout">
-                        <div class="column-panel">
-                            <div class="action-section">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                    <h3 style="font-size: 14px; margin: 0;">Monetary Policy</h3>
-                                    <span style="font-size: 12px; color: #4a5568; font-weight: 600;">Policy Rate: <span id="policyRateDisplay">${gameState.policyRate.toFixed(1)}</span>%</span>
-                                </div>
-                                <div class="action-grid">
-                                    <button class="action-btn secondary" onclick="toggleYieldControl()">${gameState.yieldControl ? '&#10003;' : ''} Yield Control</button>
-                                    <button class="action-btn secondary" onclick="toggleIOR()">${gameState.iorEnabled ? '&#10003;' : ''} IOR</button>
-                                </div>
-                                <div class="input-group" style="margin-top: 12px; margin-bottom: 0;">
-                                    <input type="range" id="policyRateInput" min="0" max="10" value="${gameState.policyRate}" step="0.5" oninput="document.getElementById('policyRateDisplay').textContent = parseFloat(this.value).toFixed(1)" onchange="setPolicyRate(this.value)">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="column-panel">
-                            <div class="action-section">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                    <h3 style="font-size: 14px; margin: 0;">Credit Regulation</h3>
-                                    <span style="font-size: 12px; color: #4a5568; font-weight: 600;">Private Credit: $${gameState.privateCredit.toFixed(0)}B</span>
-                                </div>
-                                <div class="action-grid">
-                                    <button class="action-btn ${gameState.creditRegulation === -1 ? 'secondary' : ''}" onclick="regulatePrivateCredit('tighten')">${gameState.creditRegulation === -1 ? '&#10003;' : ''} Tighten</button>
-                                    <button class="action-btn ${gameState.creditRegulation === 0 ? 'secondary' : ''}" onclick="regulatePrivateCredit('neutral')">${gameState.creditRegulation === 0 ? '&#10003;' : ''} Neutral</button>
-                                    <button class="action-btn ${gameState.creditRegulation === 1 ? 'secondary' : ''}" onclick="regulatePrivateCredit('loosen')">${gameState.creditRegulation === 1 ? '&#10003;' : ''} Loosen</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="advisor-note">
-                        <strong>MMT Insight:</strong> Interest rates affect distribution and private credit growth, but don't control inflation directly. Real resource availability determines price stability.
-                    </div>
-                `;
-            } else if (location === 'demand') {
-                content.innerHTML = `
-                    <h2>&#128722; Demand Injection</h2>
-                    <div class="action-section">
-                        <h3 style="font-size: 14px; margin-bottom: 8px;">Government Purchases</h3>
-                        <div class="action-grid">
-                            <button class="action-btn" onclick="governmentPurchase('healthcare')">Healthcare (+$5B)</button>
-                            <button class="action-btn" onclick="governmentPurchase('education')">Education (+$5B)</button>
-                            <button class="action-btn" onclick="governmentPurchase('infrastructure')">Infrastructure (+$5B)</button>
-                        </div>
-                        <div class="advisor-note">
-                            <strong>MMT Insight:</strong> Government spending creates currency and aggregate demand. It doesn't require "finding money" - spending creates the money.
-                        </div>
-                    </div>
-                `;
-            } else if (location === 'investment') {
-                content.innerHTML = `
-                    <h2>&#127959;&#65039; Capacity Investment</h2>
-                    <div class="action-section">
-                        <h3 style="font-size: 14px; margin-bottom: 8px;">Build Supply-Side Capacity</h3>
-                        <div class="action-grid">
-                            <button class="action-btn secondary" onclick="investInCapacity('energy')">Energy (+10)</button>
-                            <button class="action-btn secondary" onclick="investInCapacity('skills')">Skills (+10)</button>
-                            <button class="action-btn secondary" onclick="investInCapacity('logistics')">Logistics (+10)</button>
-                        </div>
-                        <div class="advisor-note">
-                            <strong>MMT Insight:</strong> Investment builds real productive capacity. More capacity = ability to run economy hotter without inflation.
-                        </div>
-                    </div>
-                `;
-            } else if (location === 'employment') {
-                content.innerHTML = `
-                    <h2>&#128188; Employment Policy</h2>
-                    <div class="action-section">
-                        <div class="action-grid">
-                            <button class="action-btn ${gameState.jgEnabled ? 'secondary' : ''}" onclick="toggleJobGuarantee()">
-                                ${gameState.jgEnabled ? 'Disable' : 'Enable'} Job Guarantee
-                            </button>
-                        </div>
-                        ${gameState.jgEnabled ? `
-                        <div class="input-group">
-                            <label for="jgWageInput">JG Wage: $<span id="jgWageDisplay">${gameState.jgWage}</span>/hour &nbsp;&nbsp;|&nbsp;&nbsp; JG Pool: ${gameState.jgPoolSize.toFixed(1)}% of workforce</label>
-                            <input type="range" id="jgWageInput" min="10" max="25" value="${gameState.jgWage}" step="1" oninput="document.getElementById('jgWageDisplay').textContent = this.value" onchange="setJGWage(this.value)">
-                        </div>
-                        ` : ''}
-                        <div class="advisor-note">
-                            <strong>MMT Insight:</strong> Job Guarantee provides buffer stock employment at fixed wage, acting as automatic stabilizer and price anchor.
-                        </div>
-                    </div>
-                `;
-            } else if (location === 'trade') {
-                content.innerHTML = `
-                    <h2>&#128674; International Trade</h2>
-                    <div class="action-section">
-                        <h3 style="font-size: 14px; margin-bottom: 8px;">Import Real Resources</h3>
-                        <div class="action-grid">
-                            <button class="action-btn" onclick="importGoods()">Import Goods (-$5B, +Capacity)</button>
-                        </div>
-                        <p style="font-size: 12px; margin: 8px 0;">Net Exports: $${gameState.netExports.toFixed(0)}B</p>
-                        <div class="advisor-note">
-                            <strong>MMT Insight:</strong> Trade deficit means real imports exceed exports. You're getting more goods than you're giving - a net benefit of real resources.
-                        </div>
-                    </div>
-                `;
+
+            // Hide all location content
+            document.querySelectorAll('.location-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Show selected location content
+            const selectedContent = document.getElementById(`${location}-content`);
+            if (selectedContent) {
+                selectedContent.classList.add('active');
             }
         }
 
@@ -696,29 +602,44 @@ async function callClaudeAPIProxy(messages) {
         }
 
         async function showHighScores() {
-            const modal = document.getElementById('highScoreModal');
+            const modal = document.getElementById('highScoresModal');
             modal.classList.add('active');
-            
+            modal.style.display = 'flex';
+
             // Load from server API
             const highscores = await loadLeaderboardFromServer(50);
-            const list = document.getElementById('highscoreList');
-            
+            const list = document.getElementById('highScoresList');
+
             if (highscores && highscores.length > 0) {
-                list.innerHTML = highscores.map((score, index) => `
-                    <tr>
-                        <td class="highscore-rank">${index + 1}</td>
-                        <td>${score.username}</td>
-                        <td class="highscore-score">${score.score}</td>
-                        <td class="highscore-date">${new Date(score.achieved_at).toLocaleDateString()}</td>
-                    </tr>
-                `).join('');
+                list.innerHTML = `<table class="highscore-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${highscores.map((score, index) => `
+                            <tr>
+                                <td class="highscore-rank">${index + 1}</td>
+                                <td>${score.username}</td>
+                                <td class="highscore-score">${score.score}</td>
+                                <td class="highscore-date">${new Date(score.achieved_at).toLocaleDateString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
             } else {
-                list.innerHTML = '<tr><td colspan="4" style="text-align:center;">No high scores yet</td></tr>';
+                list.innerHTML = '<p style="text-align:center; padding: 20px; color: #64748b;">No high scores yet. Be the first to play!</p>';
             }
         }
 
         function closeHighScores() {
-            document.getElementById('highScoreModal').classList.remove('active');
+            const modal = document.getElementById('highScoresModal');
+            modal.classList.remove('active');
+            modal.style.display = 'none';
         }
 
         function addHighScore(name, score) {
@@ -936,13 +857,132 @@ User Question: ${userMessage}`
             document.getElementById('eventModal').classList.remove('active');
         }
 
+        // Economic Advisor Functions
+        function openAdvisor() {
+            const modal = document.getElementById('advisorModal');
+            modal.classList.add('active');
+            modal.style.display = 'flex';
+
+            // Focus on input
+            setTimeout(() => {
+                document.getElementById('advisorInput').focus();
+            }, 100);
+        }
+
+        function closeAdvisor() {
+            const modal = document.getElementById('advisorModal');
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        }
+
+        async function askAdvisor() {
+            const input = document.getElementById('advisorInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Add user message to conversation
+            addAdvisorMessage('user', message);
+            input.value = '';
+
+            // Show typing indicator
+            const conversationHistory = document.getElementById('conversationHistory');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'advisor-message assistant typing';
+            typingDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+            conversationHistory.appendChild(typingDiv);
+            conversationHistory.scrollTop = conversationHistory.scrollHeight;
+
+            try {
+                // Build context about current game state
+                const gameContext = buildGameContext();
+
+                // Call Claude API through Django proxy
+                const messages = [
+                    {
+                        role: "user",
+                        content: `You are an Economic Advisor for Keystroke Kingdom, an MMT-based economic strategy game. Help the player understand their current situation and make informed decisions based on Modern Monetary Theory principles.
+
+Current Game State:
+${gameContext}
+
+MMT Principles:
+${mmtKnowledge}
+
+Be concise (2-3 sentences), reference specific game data, and connect advice to MMT principles. Guide thinking rather than giving away optimal strategies.
+
+Player Question: ${message}`
+                    }
+                ];
+
+                const response = await callClaudeAPIProxy(messages);
+
+                // Remove typing indicator
+                typingDiv.remove();
+
+                if (response.success && response.message) {
+                    addAdvisorMessage('assistant', response.message);
+                } else {
+                    addAdvisorMessage('assistant', response.error || 'Sorry, I had trouble processing that. Please try again.');
+                }
+            } catch (error) {
+                // Remove typing indicator
+                typingDiv.remove();
+                addAdvisorMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+            }
+        }
+
+        function addAdvisorMessage(role, content) {
+            const conversationHistory = document.getElementById('conversationHistory');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `advisor-message ${role}`;
+            messageDiv.textContent = content;
+            conversationHistory.appendChild(messageDiv);
+            conversationHistory.scrollTop = conversationHistory.scrollHeight;
+        }
+
+        function buildGameContext() {
+            const totalCapacity = Math.min(
+                gameState.capacity.energy,
+                gameState.capacity.skills,
+                gameState.capacity.logistics
+            );
+            const aggDemand = gameState.publicSpending + gameState.privateCredit + gameState.netExports;
+
+            return `Day ${gameState.currentDay}/${gameState.totalDays}
+Employment: ${gameState.employment.toFixed(1)}% (Target: >95%)
+Inflation: ${gameState.inflation.toFixed(1)}% (Target: 2-3%)
+Capacity Utilization: ${gameState.capacityUsed.toFixed(1)}%
+Public Spending: $${gameState.publicSpending.toFixed(0)}B
+Private Credit: $${gameState.privateCredit.toFixed(0)}B
+Aggregate Demand: $${aggDemand.toFixed(0)}B
+Total Capacity: ${totalCapacity.toFixed(0)} units
+Tax Rate: ${gameState.taxRate}%
+Policy Rate: ${gameState.policyRate.toFixed(1)}%
+Job Guarantee: ${gameState.jgEnabled ? 'ENABLED' : 'DISABLED'}
+Actions Remaining: ${gameState.actionsRemaining}`;
+        }
+
+        // Handle Enter key in advisor input
+        document.addEventListener('DOMContentLoaded', function() {
+            const advisorInput = document.getElementById('advisorInput');
+            if (advisorInput) {
+                advisorInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        askAdvisor();
+                    }
+                });
+            }
+        });
+
         // Export functions to window
-        window.governmentPurchase = governmentPurchase;
+        window.publicSpending = publicSpending;
         window.investInCapacity = investInCapacity;
         window.importGoods = importGoods;
         window.toggleJobGuarantee = toggleJobGuarantee;
-        window.adjustTaxRate = adjustTaxRate;
-        window.setPolicyRate = setPolicyRate;
+        window.adjustTax = adjustTax;
+        window.adjustPolicyRate = adjustPolicyRate;
         window.setJGWage = setJGWage;
         window.handleEventChoice = handleEventChoice;
         window.selectLocation = selectLocation;
@@ -960,5 +1000,8 @@ User Question: ${userMessage}`
         window.regulatePrivateCredit = regulatePrivateCredit;
         window.submitHighScore = submitHighScore;
         window.nextTurn = nextTurn;
+        window.openAdvisor = openAdvisor;
+        window.closeAdvisor = closeAdvisor;
+        window.askAdvisor = askAdvisor;
 
         init();
