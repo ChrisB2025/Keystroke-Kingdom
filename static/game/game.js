@@ -349,13 +349,19 @@ async function callClaudeAPIProxy(messages) {
             const narrative = generateEconomicNarrative();
             const narrativeEl = document.getElementById('economicNarrative');
 
+            // Update content
             narrativeEl.innerHTML = narrative;
-            narrativeEl.classList.add('show');
 
-            // Hide after 6 seconds
+            // Trigger update animation
+            narrativeEl.classList.remove('updated');
             setTimeout(() => {
-                narrativeEl.classList.remove('show');
-            }, 6000);
+                narrativeEl.classList.add('updated');
+            }, 10);
+
+            // Remove animation class after it completes
+            setTimeout(() => {
+                narrativeEl.classList.remove('updated');
+            }, 600);
         }
 
         function generateEconomicNarrative() {

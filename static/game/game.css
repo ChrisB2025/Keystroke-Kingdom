@@ -12,33 +12,40 @@
             background: linear-gradient(135deg, #012169 0%, #C8102E 100%);
         }
 
-        /* Economic Narrative Notification */
-        .economic-narrative {
-            position: fixed;
-            top: -200px;
-            left: 50%;
-            transform: translateX(-50%);
-            max-width: 600px;
-            width: 90%;
+        /* Economic Narrative Panel - Integrated in UI */
+        .economic-narrative-panel {
             background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
             color: white;
-            padding: 16px 20px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-            z-index: 3000;
-            transition: top 0.5s ease-in-out;
-            font-size: 14px;
-            line-height: 1.6;
-            text-align: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
         }
 
-        .economic-narrative.show {
-            top: 20px;
-        }
-
-        .economic-narrative strong {
+        .economic-narrative-panel strong {
             color: #fbbf24;
             font-weight: 600;
+        }
+
+        .economic-narrative-panel.updated {
+            animation: narrativeUpdate 0.6s ease;
+        }
+
+        @keyframes narrativeUpdate {
+            0% {
+                background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+                transform: scale(1.02);
+            }
+            100% {
+                background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+                transform: scale(1);
+            }
         }
         
         .game-container {
