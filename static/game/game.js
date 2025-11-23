@@ -328,20 +328,73 @@ async function callClaudeAPIProxy(messages) {
 
         function nextTurn() {
             if (gameState.gameOver) return;
-            
+
             gameState.currentDay++;
             gameState.actionsRemaining = 3;
-            
+
             evolveEconomy();
             calculateInflation();
             updateEmployment();
-            
+
             // Check if game should end at day 30
             if (gameState.currentDay > gameState.totalDays) {
                 endGame();
             } else {
                 updateDisplay();
+                showEconomicNarrative();
             }
+        }
+
+        function showEconomicNarrative() {
+            const narrative = generateEconomicNarrative();
+            const narrativeEl = document.getElementById('economicNarrative');
+
+            narrativeEl.innerHTML = narrative;
+            narrativeEl.classList.add('show');
+
+            // Hide after 6 seconds
+            setTimeout(() => {
+                narrativeEl.classList.remove('show');
+            }, 6000);
+        }
+
+        function generateEconomicNarrative() {
+            const totalCapacity = Math.min(
+                gameState.capacity.energy,
+                gameState.capacity.skills,
+                gameState.capacity.logistics
+            );
+            const aggDemand = gameState.publicSpending + gameState.privateCredit + gameState.netExports;
+            const demandGap = aggDemand - totalCapacity;
+            const unemploymentRate = 100 - gameState.employment;
+
+            // Day-specific introductions
+            let intro = `<strong>Day ${gameState.currentDay}:</strong> `;
+
+            // Analyze the economic situation and provide MMT-based narrative
+            if (gameState.inflation > 4 && demandGap > 10) {
+                intro += `<strong>Inflation pressure building!</strong> Your aggregate demand ($${aggDemand.toFixed(0)}B) exceeds productive capacity (${totalCapacity.toFixed(0)} units). MMT principle: The real constraint is resources, not money. Consider cooling demand or expanding capacity.`;
+            } else if (gameState.inflation < 1.5 && unemploymentRate > 10) {
+                intro += `<strong>Economy running cold.</strong> With ${unemploymentRate.toFixed(0)}% unemployment and low inflation, you're under-utilizing real resources. MMT says: Increase public spending to put idle resources to work!`;
+            } else if (gameState.employment >= 95 && gameState.inflation >= 2 && gameState.inflation <= 3) {
+                intro += `<strong>Excellent balance!</strong> You've achieved full employment (${gameState.employment.toFixed(0)}%) with stable inflation (${gameState.inflation.toFixed(1)}%). This demonstrates MMT's insight: governments can achieve prosperity by managing real resources effectively.`;
+            } else if (gameState.jgEnabled && unemploymentRate < 5) {
+                intro += `<strong>Job Guarantee working!</strong> Your JG program absorbed ${gameState.jgPoolSize.toFixed(1)}% of workers, providing a buffer stock that stabilizes employment. The fixed JG wage acts as a price anchor, demonstrating MMT's automatic stabilizer concept.`;
+            } else if (!gameState.jgEnabled && unemploymentRate > 5) {
+                intro += `<strong>Slack in labor market.</strong> ${unemploymentRate.toFixed(0)}% unemployment means idle human resources. MMT insight: These are real resources being wasted. A Job Guarantee could provide full employment while anchoring prices.`;
+            } else if (gameState.capacityUsed > 90 && gameState.inflation > 3) {
+                intro += `<strong>Hitting capacity limits.</strong> At ${gameState.capacityUsed.toFixed(0)}% utilization, you're near the productive boundary. MMT teaches: Inflation signals real resource scarcity, not money scarcity. Invest in capacity to expand the frontier!`;
+            } else if (gameState.taxRate > 30 && aggDemand < totalCapacity) {
+                intro += `<strong>High taxes cooling demand.</strong> Your ${gameState.taxRate}% tax rate is deleting money from the economy. MMT principle: Taxes don't fund spending—they free up real resources by reducing private demand. But you may have room to cut taxes and boost activity.`;
+            } else if (gameState.publicSpending > 60 && gameState.inflation < 3) {
+                intro += `<strong>Fiscal expansion working!</strong> Public spending of $${gameState.publicSpending.toFixed(0)}B is creating currency and demand without triggering inflation. MMT vindicated: Currency issuers aren't financially constrained—real resources are the limit.`;
+            } else if (demandGap < -15) {
+                intro += `<strong>Demand well below capacity.</strong> You have ${Math.abs(demandGap).toFixed(0)} units of spare capacity. MMT lesson: This represents potential prosperity being left on the table. Government spending creates the money needed to mobilize these resources!`;
+            } else {
+                intro += `<strong>Steady progress.</strong> Employment at ${gameState.employment.toFixed(0)}%, inflation at ${gameState.inflation.toFixed(1)}%. Keep monitoring the balance between aggregate demand and productive capacity—the true constraint in MMT economics.`;
+            }
+
+            return intro;
         }
 
         function evolveEconomy() {
@@ -564,30 +617,62 @@ async function callClaudeAPIProxy(messages) {
 
         function endGame() {
             gameState.gameOver = true;
-            
+
             // Darken and disable the game container
             document.getElementById('gameContainer').classList.add('game-over');
-            
+
             const employmentScore = gameState.employment * 2;
             const inflationPenalty = Math.abs(gameState.inflation - 2.5) * 10;
             const servicesBonus = gameState.servicesScore * 1.5;
-            
+
             gameState.finalScore = Math.max(0, employmentScore + servicesBonus - inflationPenalty);
-            
+
             // Submit high score to server (if authenticated)
             submitHighScoreToServer(gameState.finalScore);
-            
-            promptForName();
+
+            // Show game over modal
+            showGameOverModal();
         }
 
-        function promptForName() {
-            document.getElementById('finalScoreDisplay').textContent = gameState.finalScore.toFixed(0);
-            document.getElementById('highScoreInputSection').style.display = 'block';
-            document.getElementById('playerNameInput').value = '';
-            showHighScores();
-            setTimeout(() => {
-                document.getElementById('playerNameInput').focus();
-            }, 100);
+        function showGameOverModal() {
+            const modal = document.getElementById('gameOverModal');
+
+            // Set title
+            document.getElementById('gameOverTitle').textContent = 'Game Complete!';
+
+            // Set message
+            const message = `Congratulations! You completed 30 days of economic management.`;
+            document.getElementById('gameOverMessage').innerHTML = `<p style="text-align: center; margin: 16px 0;">${message}</p>`;
+
+            // Set stats
+            const stats = `
+                <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                    <h3 style="margin: 0 0 12px 0; text-align: center; color: #2d3748;">Final Score: ${gameState.finalScore.toFixed(0)}</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
+                        <div style="text-align: center;">
+                            <div style="color: #64748b; margin-bottom: 4px;">Final Employment</div>
+                            <div style="font-weight: bold; font-size: 16px; color: ${gameState.employment >= 95 ? '#059669' : gameState.employment >= 85 ? '#d97706' : '#dc2626'};">${gameState.employment.toFixed(1)}%</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="color: #64748b; margin-bottom: 4px;">Final Inflation</div>
+                            <div style="font-weight: bold; font-size: 16px; color: ${gameState.inflation >= 2 && gameState.inflation <= 3 ? '#059669' : gameState.inflation >= 1 && gameState.inflation <= 4 ? '#d97706' : '#dc2626'};">${gameState.inflation.toFixed(1)}%</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="color: #64748b; margin-bottom: 4px;">Services Score</div>
+                            <div style="font-weight: bold; font-size: 16px; color: #4338ca;">${gameState.servicesScore.toFixed(0)}</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="color: #64748b; margin-bottom: 4px;">Capacity Used</div>
+                            <div style="font-weight: bold; font-size: 16px; color: #7c3aed;">${gameState.capacityUsed.toFixed(0)}%</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('gameOverStats').innerHTML = stats;
+
+            // Show modal
+            modal.classList.add('active');
+            modal.style.display = 'flex';
         }
 
         function submitHighScore() {
