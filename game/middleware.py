@@ -4,8 +4,8 @@ Custom middleware for Keystroke Kingdom.
 
 class DisableCSPMiddleware:
     """
-    Middleware to disable restrictive Content Security Policy that blocks JavaScript.
-    This allows our game's event handlers and inline scripts to work.
+    Middleware to completely remove Content Security Policy headers.
+    CSP is controlled by meta tag in HTML instead.
     """
     def __init__(self, get_response):
         self.get_response = get_response
@@ -13,13 +13,17 @@ class DisableCSPMiddleware:
     def __call__(self, request):
         response = self.get_response(request)
 
-        # Remove any CSP headers that might be blocking JavaScript
-        if 'Content-Security-Policy' in response:
-            del response['Content-Security-Policy']
-        if 'Content-Security-Policy-Report-Only' in response:
-            del response['Content-Security-Policy-Report-Only']
+        # Aggressively remove ALL CSP-related headers
+        # Don't set new ones - let HTML meta tag control CSP
+        csp_headers = [
+            'Content-Security-Policy',
+            'Content-Security-Policy-Report-Only',
+            'X-Content-Security-Policy',
+            'X-WebKit-CSP',
+        ]
 
-        # Set a permissive CSP that allows our JavaScript
-        response['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;"
+        for header in csp_headers:
+            if header in response:
+                del response[header]
 
         return response

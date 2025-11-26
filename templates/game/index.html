@@ -1,9 +1,10 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Override restrictive CSP to allow our JavaScript to run -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.anthropic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self' https://api.anthropic.com;">
     <title>Keystroke Kingdom v6.0 - Economic Strategy Game</title>
     <link rel="stylesheet" href="{% static 'game/game.css' %}">
     <style>
@@ -422,7 +423,7 @@
     <!-- Economic Event Modal -->
     <div class="modal" id="eventModal">
         <div class="modal-content event-modal">
-            <button class="modal-close" id="eventModalCloseBtn">&times;</button>
+            <button class="modal-close" id="eventModalCloseBtn" onclick="closeEventModal()">&times;</button>
             <h2 id="eventTitle" class="event-title">Economic Event</h2>
             <div id="eventDescription" class="event-description"></div>
             <div id="eventChoices" class="event-choices"></div>
@@ -435,7 +436,7 @@
         <div class="modal-content event-result-modal">
             <h2 id="eventResultTitle" class="event-title">Decision Result</h2>
             <div id="eventResultContent" class="event-result-content"></div>
-            <button class="modal-button" id="eventResultContinueBtn">Continue</button>
+            <button class="modal-button" id="eventResultContinueBtn" onclick="closeEventResultModal()">Continue</button>
         </div>
     </div>
 
