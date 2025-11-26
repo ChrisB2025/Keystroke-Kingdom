@@ -732,6 +732,12 @@ async function callClaudeAPIProxy(messages) {
                 const choiceBtn = document.createElement('button');
                 choiceBtn.className = 'event-choice-btn';
                 choiceBtn.setAttribute('data-choice-index', index);
+                choiceBtn.setAttribute('type', 'button'); // Explicitly set button type
+
+                // Store choice data directly on the element
+                choiceBtn.choiceData = choice;
+                choiceBtn.eventData = eventData;
+
                 choiceBtn.innerHTML = `
                     <div class="choice-main">
                         <div class="choice-text">${choice.text}</div>
@@ -740,24 +746,6 @@ async function callClaudeAPIProxy(messages) {
                     <div class="choice-cost">${choice.cost > 0 ? `${choice.cost} action${choice.cost > 1 ? 's' : ''}` : 'Free'}</div>
                 `;
 
-                // Use standard click handler (not capture)
-                choiceBtn.onclick = (e) => {
-                    console.log('=== BUTTON CLICKED ===');
-                    console.log('Button index:', index);
-                    console.log('Choice:', choice.text);
-                    console.log('Event target:', e.target);
-                    console.log('Current target:', e.currentTarget);
-
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-
-                    console.log('Calling handleEventChoice...');
-                    handleEventChoice(eventData, choice);
-
-                    return false;
-                };
-
                 choicesContainer.appendChild(choiceBtn);
                 console.log(`Button ${index + 1} appended to container`);
             });
@@ -765,18 +753,44 @@ async function callClaudeAPIProxy(messages) {
             // Show MMT lesson
             lessonContainer.innerHTML = eventData.mmtLesson;
 
+            // Use event delegation on the choices container instead of individual buttons
+            choicesContainer.onclick = null; // Clear any existing handler
+            choicesContainer.onclick = (e) => {
+                console.log('=== CHOICES CONTAINER CLICKED ===');
+                console.log('Target:', e.target);
+                console.log('Target className:', e.target.className);
+
+                // Find the button element (might have clicked on a child div)
+                let button = e.target;
+                while (button && button !== choicesContainer) {
+                    if (button.classList && button.classList.contains('event-choice-btn')) {
+                        console.log('=== FOUND BUTTON ===');
+                        console.log('Button element:', button);
+
+                        const choice = button.choiceData;
+                        const eventData = button.eventData;
+
+                        if (choice && eventData) {
+                            console.log('Choice data found:', choice.text);
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleEventChoice(eventData, choice);
+                        } else {
+                            console.error('Button missing choice or event data!');
+                        }
+                        return false;
+                    }
+                    button = button.parentElement;
+                }
+
+                console.log('Click was not on a button');
+            };
+
             modal.classList.add('active');
             modal.style.display = 'flex';
 
-            // Add click-outside-to-close - but only to modal background, not content
-            modal.onclick = (e) => {
-                console.log('Modal clicked, target:', e.target.className);
-                // Only close if clicking directly on the modal overlay (not its children)
-                if (e.target.id === 'eventModal') {
-                    console.log('Closing modal (clicked outside)');
-                    closeEventModal();
-                }
-            };
+            // Remove modal's onclick to prevent interference
+            modal.onclick = null;
 
             console.log('=== EVENT MODAL DISPLAY COMPLETE ===');
         }
@@ -845,6 +859,8 @@ async function callClaudeAPIProxy(messages) {
         }
 
         function showEventResultModal(eventName, choiceMade, result, mmtLesson) {
+            console.log('=== SHOWING RESULT MODAL ===');
+
             const modal = document.getElementById('eventResultModal');
             const title = document.getElementById('eventResultTitle');
             const content = document.getElementById('eventResultContent');
@@ -867,12 +883,7 @@ async function callClaudeAPIProxy(messages) {
             modal.classList.add('active');
             modal.style.display = 'flex';
 
-            // Add click-outside-to-close
-            modal.onclick = (e) => {
-                if (e.target === modal) {
-                    closeEventResultModal();
-                }
-            };
+            console.log('=== RESULT MODAL DISPLAYED ===');
         }
 
         function closeEventModal() {
@@ -900,6 +911,26 @@ async function callClaudeAPIProxy(messages) {
             if (chatInput) {
                 chatInput.addEventListener('keypress', handleChatKeyPress);
             }
+
+            // Set up event modal close button
+            const eventCloseBtn = document.getElementById('eventModalCloseBtn');
+            if (eventCloseBtn) {
+                eventCloseBtn.onclick = () => {
+                    console.log('Event modal close button clicked');
+                    closeEventModal();
+                };
+            }
+
+            // Set up event result modal continue button
+            const resultContinueBtn = document.getElementById('eventResultContinueBtn');
+            if (resultContinueBtn) {
+                resultContinueBtn.onclick = () => {
+                    console.log('Event result continue button clicked');
+                    closeEventResultModal();
+                };
+            }
+
+            console.log('Event handlers initialized');
         }
 
         function updateDisplay() {
