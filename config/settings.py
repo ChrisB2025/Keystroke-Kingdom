@@ -47,7 +47,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # 'game.middleware.DisableCSPMiddleware',  # Temporarily disabled to debug 500 error
+    'game.middleware.DisableCSPMiddleware',  # Remove CSP headers so HTML meta tag controls CSP
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
