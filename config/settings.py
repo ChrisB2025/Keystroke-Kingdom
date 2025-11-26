@@ -47,7 +47,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'game.middleware.DisableCSPMiddleware',  # Override restrictive CSP to allow JavaScript
+    # 'game.middleware.DisableCSPMiddleware',  # Temporarily disabled to debug 500 error
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
