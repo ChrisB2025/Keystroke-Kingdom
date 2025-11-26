@@ -47,6 +47,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'game.middleware.DisableCSPMiddleware',  # Override restrictive CSP to allow JavaScript
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -179,3 +180,19 @@ if os.environ.get('RAILWAY_PUBLIC_DOMAIN'):
 LOGIN_URL = '/admin/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+# Content Security Policy - Allow our JavaScript to run
+# Note: In production, consider using django-csp package for more control
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+
+# Disable strict CSP that's blocking JavaScript
+# This allows inline scripts and event handlers which we need for the game
+SECURE_REFERRER_POLICY = 'same-origin'
+
+# For Railway deployment - disable strict security that blocks JS
+if not DEBUG:
+    # Allow JavaScript in production
+    # Note: We're not setting CSP headers, letting app handle JS normally
+    pass
