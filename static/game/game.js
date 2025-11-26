@@ -704,19 +704,26 @@ async function callClaudeAPIProxy(messages) {
             showEventModal(event);
         }
 
-        function showEventModal(event) {
+        function showEventModal(eventData) {
+            console.log('Showing event modal:', eventData);
+
             const modal = document.getElementById('eventModal');
             const title = document.getElementById('eventTitle');
             const description = document.getElementById('eventDescription');
             const choicesContainer = document.getElementById('eventChoices');
             const lessonContainer = document.getElementById('eventLesson');
 
-            title.innerHTML = `🎯 ${event.name}`;
-            description.innerHTML = event.description;
+            if (!modal || !title || !description || !choicesContainer || !lessonContainer) {
+                console.error('Event modal elements not found!');
+                return;
+            }
+
+            title.innerHTML = `🎯 ${eventData.name}`;
+            description.innerHTML = eventData.description;
 
             // Build choices
             choicesContainer.innerHTML = '';
-            event.choices.forEach((choice, index) => {
+            eventData.choices.forEach((choice, index) => {
                 const choiceBtn = document.createElement('button');
                 choiceBtn.className = 'event-choice-btn';
                 choiceBtn.innerHTML = `
@@ -726,18 +733,35 @@ async function callClaudeAPIProxy(messages) {
                     </div>
                     <div class="choice-cost">${choice.cost > 0 ? `${choice.cost} action${choice.cost > 1 ? 's' : ''}` : 'Free'}</div>
                 `;
-                choiceBtn.onclick = () => handleEventChoice(event, choice);
+
+                // Add click handler
+                choiceBtn.addEventListener('click', () => {
+                    console.log('Choice clicked:', choice.text);
+                    handleEventChoice(eventData, choice);
+                });
+
                 choicesContainer.appendChild(choiceBtn);
             });
 
             // Show MMT lesson
-            lessonContainer.innerHTML = event.mmtLesson;
+            lessonContainer.innerHTML = eventData.mmtLesson;
 
             modal.classList.add('active');
             modal.style.display = 'flex';
+
+            // Add click-outside-to-close
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    closeEventModal();
+                }
+            };
+
+            console.log('Event modal displayed successfully');
         }
 
-        function handleEventChoice(event, choice) {
+        function handleEventChoice(eventData, choice) {
+            console.log('Handling event choice:', eventData.name, choice.text);
+
             // Check if player has enough actions
             if (choice.cost > gameState.actionsRemaining) {
                 alert(`You need ${choice.cost} actions but only have ${gameState.actionsRemaining} remaining.`);
@@ -751,12 +775,13 @@ async function callClaudeAPIProxy(messages) {
 
             // Execute choice effect
             const resultMessage = choice.effect(gameState);
+            console.log('Choice effect result:', resultMessage);
 
             // Record in history
             gameState.events.eventHistory.push({
                 day: gameState.currentDay,
-                eventId: event.id,
-                eventName: event.name,
+                eventId: eventData.id,
+                eventName: eventData.name,
                 choice: choice.text,
                 result: resultMessage
             });
@@ -768,7 +793,7 @@ async function callClaudeAPIProxy(messages) {
             updateDisplay();
 
             // Show result modal
-            showEventResultModal(event.name, choice.text, resultMessage, event.mmtLesson);
+            showEventResultModal(eventData.name, choice.text, resultMessage, eventData.mmtLesson);
 
             // Close event modal
             closeEventModal();
@@ -796,12 +821,23 @@ async function callClaudeAPIProxy(messages) {
 
             modal.classList.add('active');
             modal.style.display = 'flex';
+
+            // Add click-outside-to-close
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    closeEventResultModal();
+                }
+            };
         }
 
         function closeEventModal() {
             const modal = document.getElementById('eventModal');
             modal.classList.remove('active');
             modal.style.display = 'none';
+
+            // Clear the active event so game can continue
+            // (Event stays in triggeredEvents so it won't trigger again)
+            gameState.events.activeEvent = null;
         }
 
         function closeEventResultModal() {
@@ -1747,5 +1783,9 @@ Actions Remaining: ${gameState.actionsRemaining}`;
         window.closeAdvisor = closeAdvisor;
         window.askAdvisor = askAdvisor;
         window.askQuickAdvisorQuestion = askQuickAdvisorQuestion;
+
+        // Export event system functions
+        window.closeEventModal = closeEventModal;
+        window.closeEventResultModal = closeEventResultModal;
 
         init();
