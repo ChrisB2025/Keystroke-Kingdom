@@ -705,7 +705,8 @@ async function callClaudeAPIProxy(messages) {
         }
 
         function showEventModal(eventData) {
-            console.log('Showing event modal:', eventData);
+            console.log('=== SHOWING EVENT MODAL ===');
+            console.log('Event data:', eventData);
 
             const modal = document.getElementById('eventModal');
             const title = document.getElementById('eventTitle');
@@ -723,9 +724,14 @@ async function callClaudeAPIProxy(messages) {
 
             // Build choices
             choicesContainer.innerHTML = '';
+            console.log(`Creating ${eventData.choices.length} choice buttons`);
+
             eventData.choices.forEach((choice, index) => {
+                console.log(`Creating button ${index + 1}:`, choice.text);
+
                 const choiceBtn = document.createElement('button');
                 choiceBtn.className = 'event-choice-btn';
+                choiceBtn.setAttribute('data-choice-index', index);
                 choiceBtn.innerHTML = `
                     <div class="choice-main">
                         <div class="choice-text">${choice.text}</div>
@@ -734,20 +740,26 @@ async function callClaudeAPIProxy(messages) {
                     <div class="choice-cost">${choice.cost > 0 ? `${choice.cost} action${choice.cost > 1 ? 's' : ''}` : 'Free'}</div>
                 `;
 
-                // Add click handler - using capture phase to ensure it fires
-                choiceBtn.addEventListener('click', (e) => {
-                    console.log('Choice button clicked:', choice.text);
+                // Use standard click handler (not capture)
+                choiceBtn.onclick = (e) => {
+                    console.log('=== BUTTON CLICKED ===');
+                    console.log('Button index:', index);
+                    console.log('Choice:', choice.text);
+                    console.log('Event target:', e.target);
+                    console.log('Current target:', e.currentTarget);
+
                     e.preventDefault();
                     e.stopPropagation();
-                    handleEventChoice(eventData, choice);
-                }, true);
+                    e.stopImmediatePropagation();
 
-                // Also add to all child elements to capture clicks anywhere
-                choiceBtn.addEventListener('mousedown', (e) => {
-                    console.log('Mouse down on button');
-                });
+                    console.log('Calling handleEventChoice...');
+                    handleEventChoice(eventData, choice);
+
+                    return false;
+                };
 
                 choicesContainer.appendChild(choiceBtn);
+                console.log(`Button ${index + 1} appended to container`);
             });
 
             // Show MMT lesson
@@ -756,54 +768,80 @@ async function callClaudeAPIProxy(messages) {
             modal.classList.add('active');
             modal.style.display = 'flex';
 
-            // Add click-outside-to-close
+            // Add click-outside-to-close - but only to modal background, not content
             modal.onclick = (e) => {
-                if (e.target === modal) {
+                console.log('Modal clicked, target:', e.target.className);
+                // Only close if clicking directly on the modal overlay (not its children)
+                if (e.target.id === 'eventModal') {
+                    console.log('Closing modal (clicked outside)');
                     closeEventModal();
                 }
             };
 
-            console.log('Event modal displayed successfully');
+            console.log('=== EVENT MODAL DISPLAY COMPLETE ===');
         }
 
         function handleEventChoice(eventData, choice) {
-            console.log('Handling event choice:', eventData.name, choice.text);
+            console.log('=== HANDLE EVENT CHOICE START ===');
+            console.log('Event:', eventData.name);
+            console.log('Choice:', choice.text);
+            console.log('Choice cost:', choice.cost);
+            console.log('Actions remaining:', gameState.actionsRemaining);
 
             // Check if player has enough actions
             if (choice.cost > gameState.actionsRemaining) {
+                console.log('NOT ENOUGH ACTIONS!');
                 alert(`You need ${choice.cost} actions but only have ${gameState.actionsRemaining} remaining.`);
                 return;
             }
 
             // Deduct actions
             if (choice.cost > 0) {
+                console.log('Deducting', choice.cost, 'actions');
                 gameState.actionsRemaining -= choice.cost;
+                console.log('Actions remaining after deduction:', gameState.actionsRemaining);
             }
 
             // Execute choice effect
-            const resultMessage = choice.effect(gameState);
-            console.log('Choice effect result:', resultMessage);
+            console.log('Executing choice effect function...');
+            try {
+                const resultMessage = choice.effect(gameState);
+                console.log('Choice effect executed successfully');
+                console.log('Result message:', resultMessage);
 
-            // Record in history
-            gameState.events.eventHistory.push({
-                day: gameState.currentDay,
-                eventId: eventData.id,
-                eventName: eventData.name,
-                choice: choice.text,
-                result: resultMessage
-            });
+                // Record in history
+                console.log('Recording in event history...');
+                gameState.events.eventHistory.push({
+                    day: gameState.currentDay,
+                    eventId: eventData.id,
+                    eventName: eventData.name,
+                    choice: choice.text,
+                    result: resultMessage
+                });
+                console.log('Event history length:', gameState.events.eventHistory.length);
 
-            // Clear active event
-            gameState.events.activeEvent = null;
+                // Clear active event
+                console.log('Clearing active event...');
+                gameState.events.activeEvent = null;
 
-            // Update display
-            updateDisplay();
+                // Update display
+                console.log('Updating display...');
+                updateDisplay();
 
-            // Show result modal
-            showEventResultModal(eventData.name, choice.text, resultMessage, eventData.mmtLesson);
+                // Show result modal
+                console.log('Showing result modal...');
+                showEventResultModal(eventData.name, choice.text, resultMessage, eventData.mmtLesson);
 
-            // Close event modal
-            closeEventModal();
+                // Close event modal
+                console.log('Closing event modal...');
+                closeEventModal();
+
+                console.log('=== HANDLE EVENT CHOICE COMPLETE ===');
+            } catch (error) {
+                console.error('ERROR in handleEventChoice:', error);
+                console.error('Error stack:', error.stack);
+                alert('An error occurred processing your choice: ' + error.message);
+            }
         }
 
         function showEventResultModal(eventName, choiceMade, result, mmtLesson) {
