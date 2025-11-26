@@ -729,17 +729,20 @@ async function callClaudeAPIProxy(messages) {
             choicesContainer.innerHTML = '';
             console.log(`Creating ${eventData.choices.length} choice buttons`);
 
+            // Store event data globally for onclick access
+            window._currentEventData = eventData;
+            window._currentEventChoices = eventData.choices;
+
             eventData.choices.forEach((choice, index) => {
                 console.log(`Creating button ${index + 1}:`, choice.text);
 
                 const choiceBtn = document.createElement('button');
                 choiceBtn.className = 'event-choice-btn';
                 choiceBtn.setAttribute('data-choice-index', index);
-                choiceBtn.setAttribute('type', 'button'); // Explicitly set button type
+                choiceBtn.setAttribute('type', 'button');
 
-                // Store choice data directly on the element
-                choiceBtn.choiceData = choice;
-                choiceBtn.eventData = eventData;
+                // Use inline onclick instead of addEventListener to bypass CSP
+                choiceBtn.setAttribute('onclick', `window.handleEventChoiceByIndex(${index})`);
 
                 choiceBtn.innerHTML = `
                     <div class="choice-main">
@@ -749,57 +752,14 @@ async function callClaudeAPIProxy(messages) {
                     <div class="choice-cost">${choice.cost > 0 ? `${choice.cost} action${choice.cost > 1 ? 's' : ''}` : 'Free'}</div>
                 `;
 
-                // ALSO add a direct onclick to each button as a backup
-                choiceBtn.addEventListener('click', (e) => {
-                    console.log('DIRECT BUTTON CLICK EVENT:', choice.text);
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleEventChoice(eventData, choice);
-                });
-
                 choicesContainer.appendChild(choiceBtn);
-                console.log(`Button ${index + 1} appended to container`);
+                console.log(`Button ${index + 1} appended to container with onclick`);
             });
 
             console.log('All buttons created. Children count:', choicesContainer.children.length);
 
             // Show MMT lesson
             lessonContainer.innerHTML = eventData.mmtLesson;
-
-            // Use event delegation on the choices container AS WELL
-            choicesContainer.onclick = null; // Clear any existing handler
-            choicesContainer.onclick = (e) => {
-                console.log('=== CHOICES CONTAINER CLICKED (DELEGATION) ===');
-                console.log('Target:', e.target);
-                console.log('Target className:', e.target.className);
-
-                // Find the button element (might have clicked on a child div)
-                let button = e.target;
-                while (button && button !== choicesContainer) {
-                    if (button.classList && button.classList.contains('event-choice-btn')) {
-                        console.log('=== FOUND BUTTON VIA DELEGATION ===');
-                        console.log('Button element:', button);
-
-                        const choice = button.choiceData;
-                        const eventData = button.eventData;
-
-                        if (choice && eventData) {
-                            console.log('Choice data found:', choice.text);
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleEventChoice(eventData, choice);
-                        } else {
-                            console.error('Button missing choice or event data!');
-                        }
-                        return false;
-                    }
-                    button = button.parentElement;
-                }
-
-                console.log('Click was not on a button');
-            };
-
-            console.log('Event delegation handler attached to container');
 
             modal.classList.add('active');
             modal.style.display = 'flex';
@@ -809,6 +769,22 @@ async function callClaudeAPIProxy(messages) {
 
             console.log('=== EVENT MODAL DISPLAY COMPLETE ===');
             console.log('Modal should now be visible with', eventData.choices.length, 'buttons');
+        }
+
+        // Wrapper function for onclick attributes (CSP-friendly)
+        function handleEventChoiceByIndex(index) {
+            console.log('=== HANDLE EVENT CHOICE BY INDEX ===');
+            console.log('Index:', index);
+
+            const eventData = window._currentEventData;
+            const choice = window._currentEventChoices[index];
+
+            if (!eventData || !choice) {
+                console.error('Missing event data or choice!', { eventData, choice });
+                return;
+            }
+
+            handleEventChoice(eventData, choice);
         }
 
         function handleEventChoice(eventData, choice) {
@@ -925,42 +901,9 @@ async function callClaudeAPIProxy(messages) {
             selectLocation('treasury');
             loadHighScores();
 
-            const chatInput = document.getElementById('chatInput');
-            if (chatInput) {
-                chatInput.addEventListener('keypress', handleChatKeyPress);
-            }
-
-            // Set up event modal close button
-            const eventCloseBtn = document.getElementById('eventModalCloseBtn');
-            console.log('Event close button:', eventCloseBtn);
-            if (eventCloseBtn) {
-                eventCloseBtn.onclick = () => {
-                    console.log('Event modal close button clicked');
-                    closeEventModal();
-                };
-            }
-
-            // Set up event result modal continue button
-            const resultContinueBtn = document.getElementById('eventResultContinueBtn');
-            console.log('Result continue button:', resultContinueBtn);
-            if (resultContinueBtn) {
-                resultContinueBtn.onclick = () => {
-                    console.log('Event result continue button clicked');
-                    closeEventResultModal();
-                };
-            }
-
-            // Add a test click handler to the modal itself
-            const eventModal = document.getElementById('eventModal');
-            if (eventModal) {
-                console.log('Adding test click handler to modal');
-                eventModal.addEventListener('click', (e) => {
-                    console.log('MODAL CLICKED SOMEWHERE:', e.target.className, e.target.id);
-                }, true); // Use capture phase
-            }
-
+            // No need for event listeners on close buttons anymore - using inline onclick
             console.log('=== INIT COMPLETE ===');
-            console.log('Event handlers initialized');
+            console.log('Using inline onclick attributes for event handling (CSP-friendly)');
         }
 
         function updateDisplay() {
@@ -1893,5 +1836,6 @@ Actions Remaining: ${gameState.actionsRemaining}`;
         // Export event system functions
         window.closeEventModal = closeEventModal;
         window.closeEventResultModal = closeEventResultModal;
+        window.handleEventChoiceByIndex = handleEventChoiceByIndex;
 
         init();
