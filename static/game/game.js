@@ -734,10 +734,17 @@ async function callClaudeAPIProxy(messages) {
                     <div class="choice-cost">${choice.cost > 0 ? `${choice.cost} action${choice.cost > 1 ? 's' : ''}` : 'Free'}</div>
                 `;
 
-                // Add click handler
-                choiceBtn.addEventListener('click', () => {
-                    console.log('Choice clicked:', choice.text);
+                // Add click handler - using capture phase to ensure it fires
+                choiceBtn.addEventListener('click', (e) => {
+                    console.log('Choice button clicked:', choice.text);
+                    e.preventDefault();
+                    e.stopPropagation();
                     handleEventChoice(eventData, choice);
+                }, true);
+
+                // Also add to all child elements to capture clicks anywhere
+                choiceBtn.addEventListener('mousedown', (e) => {
+                    console.log('Mouse down on button');
                 });
 
                 choicesContainer.appendChild(choiceBtn);
