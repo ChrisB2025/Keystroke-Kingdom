@@ -1153,6 +1153,133 @@
             }
         }
 
+        /* Economic Events System Styling */
+        .event-modal {
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .event-result-modal {
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .event-title {
+            font-size: 22px;
+            margin: 0 0 16px 0;
+            color: #1f2937;
+            text-align: center;
+        }
+
+        .event-description {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #012169;
+        }
+
+        .event-choices {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .event-choice-btn {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .event-choice-btn:hover {
+            border-color: #012169;
+            background: #f8fafc;
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(1, 33, 105, 0.15);
+        }
+
+        .event-choice-btn:active {
+            transform: translateX(2px);
+            background: #012169;
+            color: white;
+        }
+
+        .event-choice-btn:active .choice-text {
+            color: white;
+        }
+
+        .event-choice-btn:active .choice-framing {
+            color: #e5e7eb;
+        }
+
+        .event-choice-btn:active .choice-cost {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .choice-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .choice-text {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .choice-framing {
+            font-size: 12px;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .choice-cost {
+            font-size: 12px;
+            font-weight: 600;
+            color: #012169;
+            background: #e0e7ff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            white-space: nowrap;
+            margin-left: 12px;
+        }
+
+        .event-lesson {
+            padding: 16px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .event-lesson strong {
+            color: #92400e;
+            font-size: 14px;
+        }
+
+        .event-lesson em {
+            color: #b45309;
+            font-weight: 600;
+        }
+
+        .event-result-content {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 600px) {
             .two-column-layout {
@@ -1195,5 +1322,20 @@
 
             .conversation-history {
                 max-height: 300px;
+            }
+
+            .event-modal, .event-result-modal {
+                width: 95%;
+                max-height: 90vh;
+            }
+
+            .event-choice-btn {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .choice-cost {
+                margin-left: 0;
+                margin-top: 8px;
             }
         }
