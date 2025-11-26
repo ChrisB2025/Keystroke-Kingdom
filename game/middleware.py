@@ -23,7 +23,9 @@ class DisableCSPMiddleware:
         ]
 
         for header in csp_headers:
-            if header in response:
+            try:
                 del response[header]
+            except KeyError:
+                pass  # Header doesn't exist, that's fine
 
         return response
