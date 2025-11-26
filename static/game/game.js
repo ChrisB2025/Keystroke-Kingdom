@@ -714,8 +714,11 @@ async function callClaudeAPIProxy(messages) {
             const choicesContainer = document.getElementById('eventChoices');
             const lessonContainer = document.getElementById('eventLesson');
 
+            console.log('Modal elements:',{modal, title, description, choicesContainer, lessonContainer});
+
             if (!modal || !title || !description || !choicesContainer || !lessonContainer) {
                 console.error('Event modal elements not found!');
+                alert('ERROR: Modal elements not found! Check console.');
                 return;
             }
 
@@ -746,17 +749,27 @@ async function callClaudeAPIProxy(messages) {
                     <div class="choice-cost">${choice.cost > 0 ? `${choice.cost} action${choice.cost > 1 ? 's' : ''}` : 'Free'}</div>
                 `;
 
+                // ALSO add a direct onclick to each button as a backup
+                choiceBtn.addEventListener('click', (e) => {
+                    console.log('DIRECT BUTTON CLICK EVENT:', choice.text);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleEventChoice(eventData, choice);
+                });
+
                 choicesContainer.appendChild(choiceBtn);
                 console.log(`Button ${index + 1} appended to container`);
             });
 
+            console.log('All buttons created. Children count:', choicesContainer.children.length);
+
             // Show MMT lesson
             lessonContainer.innerHTML = eventData.mmtLesson;
 
-            // Use event delegation on the choices container instead of individual buttons
+            // Use event delegation on the choices container AS WELL
             choicesContainer.onclick = null; // Clear any existing handler
             choicesContainer.onclick = (e) => {
-                console.log('=== CHOICES CONTAINER CLICKED ===');
+                console.log('=== CHOICES CONTAINER CLICKED (DELEGATION) ===');
                 console.log('Target:', e.target);
                 console.log('Target className:', e.target.className);
 
@@ -764,7 +777,7 @@ async function callClaudeAPIProxy(messages) {
                 let button = e.target;
                 while (button && button !== choicesContainer) {
                     if (button.classList && button.classList.contains('event-choice-btn')) {
-                        console.log('=== FOUND BUTTON ===');
+                        console.log('=== FOUND BUTTON VIA DELEGATION ===');
                         console.log('Button element:', button);
 
                         const choice = button.choiceData;
@@ -786,6 +799,8 @@ async function callClaudeAPIProxy(messages) {
                 console.log('Click was not on a button');
             };
 
+            console.log('Event delegation handler attached to container');
+
             modal.classList.add('active');
             modal.style.display = 'flex';
 
@@ -793,6 +808,7 @@ async function callClaudeAPIProxy(messages) {
             modal.onclick = null;
 
             console.log('=== EVENT MODAL DISPLAY COMPLETE ===');
+            console.log('Modal should now be visible with', eventData.choices.length, 'buttons');
         }
 
         function handleEventChoice(eventData, choice) {
@@ -903,6 +919,8 @@ async function callClaudeAPIProxy(messages) {
         }
 
         function init() {
+            console.log('=== INIT STARTING ===');
+
             updateDisplay();
             selectLocation('treasury');
             loadHighScores();
@@ -914,6 +932,7 @@ async function callClaudeAPIProxy(messages) {
 
             // Set up event modal close button
             const eventCloseBtn = document.getElementById('eventModalCloseBtn');
+            console.log('Event close button:', eventCloseBtn);
             if (eventCloseBtn) {
                 eventCloseBtn.onclick = () => {
                     console.log('Event modal close button clicked');
@@ -923,6 +942,7 @@ async function callClaudeAPIProxy(messages) {
 
             // Set up event result modal continue button
             const resultContinueBtn = document.getElementById('eventResultContinueBtn');
+            console.log('Result continue button:', resultContinueBtn);
             if (resultContinueBtn) {
                 resultContinueBtn.onclick = () => {
                     console.log('Event result continue button clicked');
@@ -930,6 +950,16 @@ async function callClaudeAPIProxy(messages) {
                 };
             }
 
+            // Add a test click handler to the modal itself
+            const eventModal = document.getElementById('eventModal');
+            if (eventModal) {
+                console.log('Adding test click handler to modal');
+                eventModal.addEventListener('click', (e) => {
+                    console.log('MODAL CLICKED SOMEWHERE:', e.target.className, e.target.id);
+                }, true); // Use capture phase
+            }
+
+            console.log('=== INIT COMPLETE ===');
             console.log('Event handlers initialized');
         }
 
