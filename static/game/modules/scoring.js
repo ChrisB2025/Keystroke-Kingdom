@@ -25,8 +25,8 @@ export function endGame() {
     gameState.finalScore = scoreBreakdown.total;
     gameState.scoreBreakdown = scoreBreakdown;
 
-    // Submit high score to server (if authenticated)
-    submitHighScoreToServer(gameState.finalScore);
+    // Score submission is now handled by initials input (classic arcade style)
+    // No automatic submission - player must enter initials first
 
     // Show game over modal
     showGameOverModal();
@@ -210,6 +210,72 @@ export function showGameOverModal() {
     // Show modal
     modal.classList.add('active');
     modal.style.display = 'flex';
+
+    // Wire up initials submission (classic arcade style)
+    setupInitialsSubmission();
+}
+
+// Set up the initials input and submission handler
+function setupInitialsSubmission() {
+    const initialsInput = document.getElementById('initialsInput');
+    const submitBtn = document.getElementById('submitInitialsBtn');
+    const errorEl = document.getElementById('initialsError');
+    const inputContainer = document.getElementById('initialsInputContainer');
+    const successMessage = document.getElementById('scoreSubmittedMessage');
+
+    if (!initialsInput || !submitBtn) return;
+
+    // Focus the input for quick entry
+    setTimeout(() => initialsInput.focus(), 100);
+
+    // Handle input - force uppercase and letters only
+    initialsInput.addEventListener('input', (e) => {
+        e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+        if (errorEl) errorEl.style.display = 'none';
+    });
+
+    // Handle Enter key
+    initialsInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            submitBtn.click();
+        }
+    });
+
+    // Handle submit
+    submitBtn.addEventListener('click', async () => {
+        const initials = initialsInput.value.trim();
+
+        if (initials.length === 0) {
+            if (errorEl) {
+                errorEl.textContent = 'Please enter your initials';
+                errorEl.style.display = 'block';
+            }
+            initialsInput.focus();
+            return;
+        }
+
+        // Disable button during submission
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+
+        const result = await submitHighScoreToServer(gameState.finalScore, initials);
+
+        if (result.success) {
+            // Hide input, show success message
+            if (inputContainer) inputContainer.style.display = 'none';
+            if (successMessage) successMessage.style.display = 'block';
+        } else {
+            // Show error
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Score';
+            if (errorEl) {
+                errorEl.textContent = typeof result.error === 'string'
+                    ? result.error
+                    : 'Failed to submit score. Try again.';
+                errorEl.style.display = 'block';
+            }
+        }
+    });
 }
 
 // Show high scores modal
@@ -231,7 +297,7 @@ export async function showHighScores() {
             <thead>
                 <tr>
                     <th>Rank</th>
-                    <th>Player</th>
+                    <th>Initials</th>
                     <th>Score</th>
                     <th>Date</th>
                 </tr>
@@ -240,7 +306,7 @@ export async function showHighScores() {
                 ${highscores.map((score, index) => `
                     <tr>
                         <td class="highscore-rank">${index + 1}</td>
-                        <td>${escapeHtml(score.username)}</td>
+                        <td style="font-family: monospace; font-size: 16px; letter-spacing: 2px;">${escapeHtml(score.initials || 'AAA')}</td>
                         <td class="highscore-score">${score.score}</td>
                         <td class="highscore-date">${new Date(score.achieved_at).toLocaleDateString()}</td>
                     </tr>

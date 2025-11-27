@@ -19,19 +19,37 @@ class GameSaveSerializer(serializers.ModelSerializer):
 class HighScoreSerializer(serializers.ModelSerializer):
     """
     Serializer for high score data.
+    Returns initials for display (classic arcade style).
     """
-    username = serializers.CharField(source='user.username', read_only=True)
-
     class Meta:
         model = HighScore
-        fields = ['id', 'username', 'score', 'final_day', 'employment', 'inflation', 'services', 'achieved_at']
-        read_only_fields = ['id', 'username', 'achieved_at']
+        fields = ['id', 'initials', 'score', 'final_day', 'employment', 'inflation', 'services', 'achieved_at']
+        read_only_fields = ['id', 'achieved_at']
 
 
 class HighScoreSubmitSerializer(serializers.ModelSerializer):
     """
-    Serializer for submitting high scores (without user field).
+    Serializer for submitting high scores.
+    Accepts 3-letter initials (classic arcade style) - no login required.
     """
+    initials = serializers.CharField(
+        max_length=3,
+        min_length=1,
+        required=True,
+        help_text="3-letter initials for leaderboard display"
+    )
+
     class Meta:
         model = HighScore
-        fields = ['score', 'final_day', 'employment', 'inflation', 'services']
+        fields = ['initials', 'score', 'final_day', 'employment', 'inflation', 'services']
+
+    def validate_initials(self, value):
+        """Validate and normalize initials to uppercase letters only."""
+        # Remove any non-letter characters and uppercase
+        cleaned = ''.join(c for c in value.upper() if c.isalpha())
+        if len(cleaned) == 0:
+            raise serializers.ValidationError("Initials must contain at least one letter")
+        if len(cleaned) > 3:
+            cleaned = cleaned[:3]
+        # Pad with spaces if less than 3 characters
+        return cleaned.ljust(3)[:3]

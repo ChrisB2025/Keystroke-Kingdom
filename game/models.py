@@ -32,8 +32,16 @@ class GameSave(models.Model):
 class HighScore(models.Model):
     """
     Store high scores for the leaderboard.
+    Supports both authenticated users and anonymous players with 3-letter initials.
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='high_scores')
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='high_scores',
+        null=True, blank=True, help_text="Optional: linked user account"
+    )
+    initials = models.CharField(
+        max_length=3, default='AAA',
+        help_text="3-letter initials for leaderboard display (classic arcade style)"
+    )
     score = models.IntegerField(default=0)
     final_day = models.IntegerField(default=1)
     employment = models.FloatField(default=0.0)
@@ -50,4 +58,7 @@ class HighScore(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.username} - Score: {self.score} - Day {self.final_day}"
+        display_name = self.initials
+        if self.user:
+            display_name = f"{self.initials} ({self.user.username})"
+        return f"{display_name} - Score: {self.score} - Day {self.final_day}"

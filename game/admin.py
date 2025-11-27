@@ -22,9 +22,9 @@ class HighScoreAdmin(admin.ModelAdmin):
     """
     Admin interface for HighScore model.
     """
-    list_display = ['user', 'score', 'final_day', 'employment', 'inflation', 'services', 'achieved_at']
+    list_display = ['initials', 'score', 'final_day', 'employment', 'inflation', 'services', 'achieved_at', 'user']
     list_filter = ['achieved_at', 'final_day']
-    search_fields = ['user__username']
+    search_fields = ['initials', 'user__username']
     readonly_fields = ['achieved_at']
     date_hierarchy = 'achieved_at'
     ordering = ['-score', '-achieved_at']
