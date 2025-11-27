@@ -195,19 +195,21 @@ def load_game(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 @rate_limit('submit_score', max_requests=10, window_seconds=60)
 def submit_score(request):
     """
     API endpoint to submit a high score.
-    Requires authentication.
+    No authentication required - classic arcade style with 3-letter initials.
     Rate limited to 10 requests per minute.
     """
     try:
         serializer = HighScoreSubmitSerializer(data=request.data)
 
         if serializer.is_valid():
-            high_score = serializer.save(user=request.user)
+            # Optionally link to user if authenticated
+            user = request.user if request.user.is_authenticated else None
+            high_score = serializer.save(user=user)
             response_serializer = HighScoreSerializer(high_score)
 
             return Response({
@@ -250,10 +252,9 @@ def leaderboard(request):
                 'data': cached_data
             }, status=status.HTTP_200_OK)
 
-        # Optimized: select_related and only() for minimal data transfer
-        high_scores = HighScore.objects.select_related('user').only(
-            'score', 'final_day', 'employment', 'inflation', 'services', 'achieved_at',
-            'user__username'
+        # Optimized: only() for minimal data transfer (no user join needed anymore)
+        high_scores = HighScore.objects.only(
+            'initials', 'score', 'final_day', 'employment', 'inflation', 'services', 'achieved_at'
         ).order_by('-score')[:limit]
 
         serializer = HighScoreSerializer(high_scores, many=True)

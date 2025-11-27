@@ -13,56 +13,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'game/game.css' %}">
     <style>
-        /* Additional Django-specific styles */
-        .auth-bar {
-            display: none; /* Hidden by default - only shown in game over modal */
+        /* Initials input styling for classic arcade-style highscores */
+        #initialsInput:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
         }
-
-        .auth-bar.show-in-modal {
-            display: block;
-            margin-top: 16px;
-            padding: 12px;
-            background: #f1f5f9;
-            border-radius: 6px;
-            font-size: 13px;
-            text-align: center;
-        }
-
-        .auth-bar .username {
-            font-weight: bold;
-            color: #012169;
-            margin-right: 10px;
-        }
-
-        .auth-bar a {
-            color: #012169;
-            text-decoration: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            transition: background 0.2s;
-            background: white;
-            border: 1px solid #cbd5e1;
-            display: inline-block;
-        }
-
-        .auth-bar a:hover {
-            background: #e2e8f0;
+        #initialsInput::placeholder {
+            color: #94a3b8;
         }
     </style>
 </head>
 <body>
-    <!-- Authentication Bar -->
-    {% if user.is_authenticated %}
-    <div class="auth-bar">
-        <span class="username">{{ user.username }}</span>
-        <a href="/admin/logout/">Logout</a>
-    </div>
-    {% else %}
-    <div class="auth-bar">
-        <a href="/admin/login/">Login</a>
-    </div>
-    {% endif %}
-
     <!-- Game Content -->
     <div class="game-container" id="gameContainer">
         <!-- UPPER PANEL: Stats and Day Counter -->
@@ -484,13 +446,26 @@
             <div id="gameOverMessage"></div>
             <div id="gameOverStats"></div>
 
-            <!-- Auth prompt for high score submission -->
-            {% if not user.is_authenticated %}
-            <div class="auth-bar show-in-modal">
-                <p style="margin: 0 0 8px 0; color: #64748b;">Want to save your score to the leaderboard?</p>
-                <a href="/admin/login/?next=/">Login</a>
+            <!-- Initials input for high score (classic arcade style) -->
+            <div id="initialsInputContainer" class="initials-container" style="margin: 16px 0; padding: 16px; background: #f1f5f9; border-radius: 8px;">
+                <p style="margin: 0 0 12px 0; color: #64748b; text-align: center;">Enter your initials for the leaderboard:</p>
+                <div style="display: flex; justify-content: center; align-items: center; gap: 12px;">
+                    <input type="text"
+                           id="initialsInput"
+                           maxlength="3"
+                           placeholder="AAA"
+                           style="width: 80px; font-size: 24px; text-align: center; text-transform: uppercase; padding: 8px; border: 2px solid #012169; border-radius: 6px; font-family: monospace; letter-spacing: 4px;"
+                           autocomplete="off"
+                           spellcheck="false">
+                    <button id="submitInitialsBtn" class="modal-button" style="padding: 10px 20px;">
+                        Submit Score
+                    </button>
+                </div>
+                <p id="initialsError" style="color: #dc2626; font-size: 12px; margin-top: 8px; text-align: center; display: none;"></p>
             </div>
-            {% endif %}
+            <div id="scoreSubmittedMessage" style="display: none; text-align: center; padding: 16px; background: #ecfdf5; border-radius: 6px; margin-bottom: 16px;">
+                <span style="color: #059669; font-weight: 600;">&#10004; Score submitted to leaderboard!</span>
+            </div>
 
             <button class="modal-button" onclick="location.reload()">Play Again</button>
         </div>

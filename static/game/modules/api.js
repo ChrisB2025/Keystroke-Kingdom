@@ -113,11 +113,11 @@ export async function loadGameFromServer() {
     }
 }
 
-// Submit high score to server
-export async function submitHighScoreToServer(finalScore) {
-    if (!isUserAuthenticated()) {
-        console.log('Not authenticated, skipping score submission');
-        return;
+// Submit high score to server with initials (classic arcade style - no login required)
+export async function submitHighScoreToServer(finalScore, initials) {
+    if (!initials || initials.trim().length === 0) {
+        console.error('Initials required for score submission');
+        return { success: false, error: 'Initials required' };
     }
 
     try {
@@ -128,6 +128,7 @@ export async function submitHighScoreToServer(finalScore) {
                 'X-CSRFToken': getCSRFToken()
             },
             body: JSON.stringify({
+                initials: initials.toUpperCase().trim(),
                 score: finalScore,
                 final_day: gameState.currentDay,
                 employment: gameState.employment,
@@ -139,11 +140,14 @@ export async function submitHighScoreToServer(finalScore) {
         const data = await response.json();
         if (data.success) {
             console.log('High score submitted successfully');
+            return { success: true, data: data.data };
         } else {
-            console.error('Failed to submit score:', data.error);
+            console.error('Failed to submit score:', data.errors || data.error);
+            return { success: false, error: data.errors || data.error };
         }
     } catch (error) {
         console.error('Error submitting score:', error);
+        return { success: false, error: error.message };
     }
 }
 
