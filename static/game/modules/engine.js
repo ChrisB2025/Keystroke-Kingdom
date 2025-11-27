@@ -1,12 +1,12 @@
 /**
  * engine.js - Economic calculations and game mechanics
- * Keystroke Kingdom v6.0
+ * Keystroke Kingdom v7.0 - Enhanced Drama & Gameplay Update
  */
 
-import { gameState, useAction, invalidateCache, getTotalCapacity, getAggregateDemand, updateSectoralBalances } from './gameState.js';
-import { GAME_CONSTANTS } from './config.js';
+import { gameState, useAction, invalidateCache, getTotalCapacity, getAggregateDemand, updateSectoralBalances, getDifficultyMultiplier } from './gameState.js';
+import { GAME_CONSTANTS, DIFFICULTY_SETTINGS } from './config.js';
 import { updateDisplay, showEconomicNarrative, showFloatingFeedback, pulseElement, updateRecommendedActions, showMMTInsight, awardMMTPoints, penalizeHawkishThinking } from './ui.js';
-import { checkForEvents } from './events.js';
+import { checkForEvents, checkAchievements } from './events.js';
 import { saveGameToServer } from './api.js';
 import { endGame } from './scoring.js';
 
@@ -15,15 +15,21 @@ export function nextTurn() {
     if (gameState.gameOver) return;
 
     gameState.currentDay++;
-    gameState.actionsRemaining = GAME_CONSTANTS.ACTIONS_PER_TURN;
+
+    // Actions per turn based on difficulty
+    const diffSettings = gameState.difficultySettings || DIFFICULTY_SETTINGS.normal;
+    gameState.actionsRemaining = diffSettings.actionsPerTurn;
 
     evolveEconomy();
     calculateInflation();
     updateEmployment();
 
+    // Update tracking for achievements
+    updateTracking();
+
     invalidateCache();
 
-    // Check if game should end at day 30
+    // Check if game should end
     if (gameState.currentDay > gameState.totalDays) {
         endGame();
     } else {
@@ -36,9 +42,98 @@ export function nextTurn() {
         // Check for economic events
         checkForEvents();
 
+        // Check achievements
+        checkAchievements();
+
         // Auto-save (debounced)
         saveGameToServer();
     }
+}
+
+// Update tracking metrics for achievements
+function updateTracking() {
+    if (!gameState.tracking) {
+        gameState.tracking = {
+            fullEmploymentStreak: 0,
+            stableInflationStreak: 0,
+            jgActiveDays: 0,
+            everUsedJG: false,
+            shocksHandled: 0,
+            peakInflation: gameState.inflation,
+            lowestEmployment: gameState.employment,
+            tamedInflation: false,
+            fastRecovery: false,
+            recessionStartDay: null,
+            dailySnapshots: []
+        };
+    }
+
+    // Full employment streak (95%+)
+    if (gameState.employment >= 95) {
+        gameState.tracking.fullEmploymentStreak++;
+    } else {
+        gameState.tracking.fullEmploymentStreak = 0;
+    }
+
+    // Stable inflation streak (2-3%)
+    if (gameState.inflation >= 2 && gameState.inflation <= 3) {
+        gameState.tracking.stableInflationStreak++;
+    } else {
+        gameState.tracking.stableInflationStreak = 0;
+    }
+
+    // Job Guarantee tracking
+    if (gameState.jgEnabled) {
+        gameState.tracking.jgActiveDays++;
+        gameState.tracking.everUsedJG = true;
+    }
+
+    // Peak inflation tracking
+    if (gameState.inflation > gameState.tracking.peakInflation) {
+        gameState.tracking.peakInflation = gameState.inflation;
+    }
+
+    // Lowest employment tracking
+    if (gameState.employment < gameState.tracking.lowestEmployment) {
+        gameState.tracking.lowestEmployment = gameState.employment;
+    }
+
+    // Inflation taming check
+    if (gameState.tracking.peakInflation >= 5 && gameState.inflation < 3) {
+        gameState.tracking.tamedInflation = true;
+    }
+
+    // Recession tracking for fast recovery achievement
+    if (gameState.employment < 75) {
+        if (gameState.tracking.recessionStartDay === null) {
+            gameState.tracking.recessionStartDay = gameState.currentDay;
+        }
+    } else if (gameState.employment >= 85 && gameState.tracking.recessionStartDay !== null) {
+        // Check if recovery was fast (within 5 days)
+        const recoveryDays = gameState.currentDay - gameState.tracking.recessionStartDay;
+        if (recoveryDays <= 5) {
+            gameState.tracking.fastRecovery = true;
+        }
+        gameState.tracking.recessionStartDay = null;
+    }
+
+    // Capacity growth tracking
+    if (gameState.tracking.startingCapacity) {
+        const energyGrowth = gameState.capacity.energy - gameState.tracking.startingCapacity.energy;
+        const skillsGrowth = gameState.capacity.skills - gameState.tracking.startingCapacity.skills;
+        const logisticsGrowth = gameState.capacity.logistics - gameState.tracking.startingCapacity.logistics;
+        gameState.tracking.capacityGrowth = Math.min(energyGrowth, skillsGrowth, logisticsGrowth);
+    }
+
+    // Store daily snapshot
+    gameState.tracking.dailySnapshots.push({
+        day: gameState.currentDay,
+        employment: gameState.employment,
+        inflation: gameState.inflation,
+        publicSpending: gameState.publicSpending,
+        privateCredit: gameState.privateCredit,
+        capacity: { ...gameState.capacity }
+    });
 }
 
 // Evolve the economy each turn
@@ -65,10 +160,16 @@ export function evolveEconomy() {
         gameState.currencyIssued += jgSpending * 0.1;
     }
 
-    // Random capacity fluctuations
-    gameState.capacity.energy += Math.random() * 0.3 - 0.1;
-    gameState.capacity.skills += Math.random() * 0.3 - 0.1;
-    gameState.capacity.logistics += Math.random() * 0.3 - 0.1;
+    // Random capacity fluctuations (scaled by difficulty)
+    const fluctuationRange = getDifficultyMultiplier('capacityFluctuation');
+    gameState.capacity.energy += (Math.random() * fluctuationRange * 2) - fluctuationRange * 0.5;
+    gameState.capacity.skills += (Math.random() * fluctuationRange * 2) - fluctuationRange * 0.5;
+    gameState.capacity.logistics += (Math.random() * fluctuationRange * 2) - fluctuationRange * 0.5;
+
+    // Ensure capacity doesn't go below minimum
+    gameState.capacity.energy = Math.max(GAME_CONSTANTS.MIN_CAPACITY, gameState.capacity.energy);
+    gameState.capacity.skills = Math.max(GAME_CONSTANTS.MIN_CAPACITY, gameState.capacity.skills);
+    gameState.capacity.logistics = Math.max(GAME_CONSTANTS.MIN_CAPACITY, gameState.capacity.logistics);
 
     // Update sectoral balances at end of turn
     updateSectoralBalances();
@@ -78,13 +179,15 @@ export function evolveEconomy() {
 export function calculateInflation() {
     const totalCapacity = getTotalCapacity();
     const aggDemand = getAggregateDemand();
+    const inflationMultiplier = getDifficultyMultiplier('inflation');
 
     gameState.capacityUsed = Math.min(100, (aggDemand / totalCapacity) * 100);
 
     const demandGap = aggDemand - totalCapacity;
 
     if (demandGap > 0) {
-        const baseInflation = Math.pow(demandGap / totalCapacity, 1.5) * 10;
+        // Base inflation calculation, scaled by difficulty
+        const baseInflation = Math.pow(demandGap / totalCapacity, 1.5) * 10 * inflationMultiplier;
         gameState.inflation = 2.0 + baseInflation;
     } else {
         const deflationPressure = Math.abs(demandGap) / totalCapacity;

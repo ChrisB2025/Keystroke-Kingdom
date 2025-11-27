@@ -1,9 +1,9 @@
 /**
  * gameState.js - Game state management with memoization
- * Keystroke Kingdom v6.0
+ * Keystroke Kingdom v7.0 - Enhanced Drama & Gameplay Update
  */
 
-import { GAME_CONSTANTS } from './config.js';
+import { GAME_CONSTANTS, DIFFICULTY_SETTINGS, GAME_MODES } from './config.js';
 
 // Cache for computed values
 let computedCache = {
@@ -15,29 +15,41 @@ let computedCache = {
 };
 
 // Initial game state factory
-export function createInitialState() {
+export function createInitialState(difficulty = 'normal', gameMode = 'standard') {
+    const diffSettings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.normal;
+    const modeSettings = GAME_MODES[gameMode] || GAME_MODES.standard;
+
+    // Get base values, potentially overridden by game mode
+    const baseCapacity = GAME_CONSTANTS.INITIAL_CAPACITY;
+    const startingState = modeSettings.startingState || {};
+
     return {
+        // Game Settings
+        difficulty: difficulty,
+        gameMode: gameMode,
+        difficultySettings: diffSettings,
+
         currentDay: 1,
-        totalDays: GAME_CONSTANTS.TOTAL_DAYS,
-        actionsRemaining: GAME_CONSTANTS.ACTIONS_PER_TURN,
+        totalDays: modeSettings.totalDays || GAME_CONSTANTS.TOTAL_DAYS,
+        actionsRemaining: diffSettings.actionsPerTurn,
 
-        employment: GAME_CONSTANTS.INITIAL_EMPLOYMENT,
-        inflation: GAME_CONSTANTS.INITIAL_INFLATION,
-        servicesScore: GAME_CONSTANTS.INITIAL_SERVICES,
+        employment: startingState.employment ?? GAME_CONSTANTS.INITIAL_EMPLOYMENT,
+        inflation: startingState.inflation ?? GAME_CONSTANTS.INITIAL_INFLATION,
+        servicesScore: startingState.servicesScore ?? GAME_CONSTANTS.INITIAL_SERVICES,
 
-        capacity: {
-            energy: GAME_CONSTANTS.INITIAL_CAPACITY,
-            skills: GAME_CONSTANTS.INITIAL_CAPACITY,
-            logistics: GAME_CONSTANTS.INITIAL_CAPACITY
+        capacity: startingState.capacity ? { ...startingState.capacity } : {
+            energy: baseCapacity,
+            skills: baseCapacity,
+            logistics: baseCapacity
         },
-        capacityUsed: GAME_CONSTANTS.INITIAL_EMPLOYMENT,
+        capacityUsed: startingState.employment ?? GAME_CONSTANTS.INITIAL_EMPLOYMENT,
 
-        publicSpending: GAME_CONSTANTS.INITIAL_PUBLIC_SPENDING,
-        privateCredit: GAME_CONSTANTS.INITIAL_PRIVATE_CREDIT,
-        netExports: GAME_CONSTANTS.INITIAL_NET_EXPORTS,
+        publicSpending: startingState.publicSpending ?? GAME_CONSTANTS.INITIAL_PUBLIC_SPENDING,
+        privateCredit: startingState.privateCredit ?? GAME_CONSTANTS.INITIAL_PRIVATE_CREDIT,
+        netExports: startingState.netExports ?? GAME_CONSTANTS.INITIAL_NET_EXPORTS,
 
-        taxRate: GAME_CONSTANTS.INITIAL_TAX_RATE,
-        policyRate: GAME_CONSTANTS.INITIAL_POLICY_RATE,
+        taxRate: startingState.taxRate ?? GAME_CONSTANTS.INITIAL_TAX_RATE,
+        policyRate: startingState.policyRate ?? GAME_CONSTANTS.INITIAL_POLICY_RATE,
 
         jgEnabled: false,
         jgWage: 15,
@@ -51,17 +63,17 @@ export function createInitialState() {
         taxesDeleted: 0,
 
         // MMT Metrics - Deficit and Sectoral Balances
-        deficit: 0,  // Government deficit (positive) or surplus (negative)
+        deficit: 0,
         sectorialBalances: {
-            government: -40,  // Government deficit = private surplus source
-            private: 40,      // Private sector net financial assets
-            external: 0       // External sector (trade balance)
+            government: -40,
+            private: 40,
+            external: 0
         },
 
         // MMT Score Gamification
         mmtScore: 0,
-        mmtBadges: [],  // Badges earned for MMT insights
-        mmtDecisions: {  // Track MMT-aligned vs deficit-hawk decisions
+        mmtBadges: [],
+        mmtDecisions: {
             aligned: 0,
             hawkish: 0
         },
@@ -75,9 +87,61 @@ export function createInitialState() {
             activeEvent: null,
             eventHistory: [],
             mmtInsightsShown: [],
-            eventCounter: 0
-        }
+            eventCounter: 0,
+            pendingChainEvents: [],  // For event chain system
+            eventsRepeatable: modeSettings.eventsRepeatable || false
+        },
+
+        // Achievement Tracking
+        achievements: [],  // Unlocked achievement IDs
+        tracking: {
+            // Starting values for comparison
+            startingCapacity: startingState.capacity ? { ...startingState.capacity } : {
+                energy: baseCapacity,
+                skills: baseCapacity,
+                logistics: baseCapacity
+            },
+            startingEmployment: startingState.employment ?? GAME_CONSTANTS.INITIAL_EMPLOYMENT,
+
+            // Streak tracking
+            fullEmploymentStreak: 0,
+            stableInflationStreak: 0,
+            jgActiveDays: 0,
+            everUsedJG: false,
+
+            // Event/Crisis tracking
+            shocksHandled: 0,
+            recessionDays: 0,
+            peakInflation: startingState.inflation ?? GAME_CONSTANTS.INITIAL_INFLATION,
+            lowestEmployment: startingState.employment ?? GAME_CONSTANTS.INITIAL_EMPLOYMENT,
+            tamedInflation: false,
+            fastRecovery: false,
+            recessionStartDay: null,
+
+            // Investment tracking
+            greenInvestment: 0,
+            capacityGrowth: 0,
+
+            // Daily snapshots for trend analysis
+            dailySnapshots: []
+        },
+
+        // Scenario objectives (if applicable)
+        objectives: modeSettings.objectives || null
     };
+}
+
+// Get difficulty-adjusted value
+export function getDifficultyMultiplier(type) {
+    const settings = gameState.difficultySettings || DIFFICULTY_SETTINGS.normal;
+    switch (type) {
+        case 'inflation': return settings.inflationMultiplier;
+        case 'eventProbability': return settings.eventProbabilityMultiplier;
+        case 'shockSeverity': return settings.shockSeverityMultiplier;
+        case 'score': return settings.scoreMultiplier;
+        case 'capacityFluctuation': return settings.capacityFluctuationRange;
+        default: return 1.0;
+    }
 }
 
 // The main game state object
@@ -167,8 +231,8 @@ export function useAction() {
     return false;
 }
 
-export function resetState() {
-    Object.assign(gameState, createInitialState());
+export function resetState(difficulty = 'normal', gameMode = 'standard') {
+    Object.assign(gameState, createInitialState(difficulty, gameMode));
     invalidateCache();
 }
 
