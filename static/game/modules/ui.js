@@ -97,6 +97,10 @@ export function animateValue(elementId, start, end, duration = 500) {
 // MMT TEACHING MOMENTS
 // ============================================
 
+// Queue for MMT insights to prevent overlapping modals
+let insightQueue = [];
+let isInsightModalOpen = false;
+
 // MMT Insight definitions
 const mmtInsights = {
     spending_creates_money: {
@@ -141,7 +145,7 @@ const mmtInsights = {
     }
 };
 
-// Show an MMT teaching moment
+// Show an MMT teaching moment (queued to prevent overlapping)
 export function showMMTInsight(insightKey, forceShow = false) {
     if (!gameState.events.mmtInsightsShown) {
         gameState.events.mmtInsightsShown = [];
@@ -164,10 +168,31 @@ export function showMMTInsight(insightKey, forceShow = false) {
         gameState.mmtBadges.push(insight.badge);
     }
 
-    // Create and show the insight modal
-    showInsightModal(insight.title, insight.message, insight.badge);
+    // Queue the insight instead of showing immediately
+    insightQueue.push({
+        title: insight.title,
+        message: insight.message,
+        badge: insight.badge
+    });
+
+    // If no modal is currently open, show the first in queue
+    if (!isInsightModalOpen) {
+        processInsightQueue();
+    }
 
     return true;
+}
+
+// Process the insight queue - show next insight if available
+function processInsightQueue() {
+    if (insightQueue.length === 0) {
+        isInsightModalOpen = false;
+        return;
+    }
+
+    const nextInsight = insightQueue.shift();
+    isInsightModalOpen = true;
+    showInsightModal(nextInsight.title, nextInsight.message, nextInsight.badge);
 }
 
 // Display the insight modal
@@ -210,12 +235,17 @@ function showInsightModal(title, message, badge) {
     modal.classList.add('active');
 }
 
-// Close the insight modal
+// Close the insight modal and show next in queue
 export function closeMMTInsight() {
     const modal = document.getElementById('mmtInsightModal');
     if (modal) {
         modal.classList.remove('active');
     }
+
+    // Process next insight in queue after a short delay
+    setTimeout(() => {
+        processInsightQueue();
+    }, 300);
 }
 
 // Make closeMMTInsight available globally for onclick
