@@ -381,7 +381,7 @@
         }
 
         .accordion-content.expanded {
-            max-height: 280px;
+            max-height: 400px;
             padding: var(--space-2, 8px) var(--space-3, 12px) var(--space-3, 12px);
         }
 
@@ -604,14 +604,15 @@
 
         /* Scrollable stats area within upper panel */
         .upper-panel-content {
-            flex: 1;
+            flex: 1 1 0;
+            min-height: 0;
             overflow-y: auto;
+            overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
             padding: var(--space-2, 8px);
             display: flex;
             flex-direction: column;
             gap: var(--space-2, 8px);
-            min-height: 0;
         }
 
         .header-compact {
@@ -747,11 +748,12 @@
             grid-template-columns: 1fr 1fr;
             gap: var(--space-2, 8px);
             align-items: stretch;
-            flex-shrink: 0;
+            flex: 0 0 auto;
             padding: var(--space-2, 8px);
             background: rgba(255, 255, 255, 0.98);
             border-top: 1px solid var(--color-gray-200, #e5e7eb);
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 10;
         }
 
         .actions-badge {
