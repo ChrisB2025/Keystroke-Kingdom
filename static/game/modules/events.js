@@ -1,11 +1,11 @@
 /**
- * events.js - Economic events system
- * Keystroke Kingdom v6.0
+ * events.js - Economic events system with drama and chain reactions
+ * Keystroke Kingdom v7.0 - Enhanced Drama & Gameplay Update
  */
 
-import { gameState, invalidateCache } from './gameState.js';
-import { economicEvents, GAME_CONSTANTS } from './config.js';
-import { updateDisplay } from './ui.js';
+import { gameState, invalidateCache, getDifficultyMultiplier } from './gameState.js';
+import { economicEvents, GAME_CONSTANTS, EVENT_CHAINS, ACHIEVEMENTS } from './config.js';
+import { updateDisplay, showAchievementUnlock } from './ui.js';
 
 // Current event data for modal handlers
 let currentEventData = null;
@@ -19,19 +19,29 @@ export function getCurrentEventChoices() {
     return currentEventChoices;
 }
 
-// Check for and potentially trigger events
+// Check for and potentially trigger events (including chain events)
 export function checkForEvents() {
     if (gameState.gameOver) return;
     if (gameState.events.activeEvent) return; // Only one event at a time
 
+    // First, check for pending chain events
+    if (checkPendingChainEvents()) return;
+
     // Convert economicEvents object to array
     const availableEvents = Object.values(economicEvents);
+
+    // Get difficulty multiplier for event probability
+    const probMultiplier = getDifficultyMultiplier('eventProbability');
 
     // Filter eligible events
     const eligibleEvents = availableEvents.filter(event => {
         const [minDay, maxDay] = event.dayRange;
         const inDayRange = gameState.currentDay >= minDay && gameState.currentDay <= maxDay;
-        const notTriggered = !gameState.events.triggeredEvents.includes(event.id);
+
+        // In sandbox mode with repeatable events, allow re-triggering
+        const notTriggered = gameState.events.eventsRepeatable ||
+                            !gameState.events.triggeredEvents.includes(event.id);
+
         const conditionMet = event.condition(gameState);
 
         return inDayRange && notTriggered && conditionMet;
@@ -39,69 +49,183 @@ export function checkForEvents() {
 
     if (eligibleEvents.length === 0) return;
 
-    // Check each eligible event against its probability
+    // Check each eligible event against its probability (adjusted for difficulty)
     for (const event of eligibleEvents) {
-        if (Math.random() < event.probability) {
+        const adjustedProbability = event.probability * probMultiplier;
+        if (Math.random() < adjustedProbability) {
             triggerEvent(event);
             break; // Only trigger one event per check
         }
     }
 }
 
+// Check and trigger pending chain events
+function checkPendingChainEvents() {
+    if (!gameState.events.pendingChainEvents ||
+        gameState.events.pendingChainEvents.length === 0) return false;
+
+    // Find events that are due to trigger
+    const dueEvents = gameState.events.pendingChainEvents.filter(
+        pending => pending.triggerDay <= gameState.currentDay
+    );
+
+    if (dueEvents.length === 0) return false;
+
+    // Get the first due event
+    const pending = dueEvents[0];
+
+    // Remove from pending list
+    gameState.events.pendingChainEvents = gameState.events.pendingChainEvents.filter(
+        p => p !== pending
+    );
+
+    // Check condition before triggering
+    const chain = EVENT_CHAINS[pending.chainId];
+    if (chain && chain.condition(gameState)) {
+        const followUpEvent = economicEvents[pending.eventId];
+        if (followUpEvent) {
+            // Add drama: show chain event warning
+            console.log(`Chain event triggered: ${followUpEvent.name}`);
+            triggerEvent(followUpEvent, true); // Mark as chain event
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Schedule a chain event for future triggering
+export function scheduleChainEvent(chainId, triggeredEventId) {
+    const chain = EVENT_CHAINS[chainId];
+    if (!chain) return;
+
+    // Check if this chain applies to the triggered event
+    if (chain.trigger !== triggeredEventId) return;
+
+    // Roll probability
+    if (Math.random() > chain.probability) return;
+
+    // Calculate trigger day
+    const delay = chain.delayDays.min +
+                  Math.floor(Math.random() * (chain.delayDays.max - chain.delayDays.min + 1));
+    const triggerDay = gameState.currentDay + delay;
+
+    // Add to pending events
+    if (!gameState.events.pendingChainEvents) {
+        gameState.events.pendingChainEvents = [];
+    }
+
+    gameState.events.pendingChainEvents.push({
+        chainId: chainId,
+        eventId: chain.followUp,
+        triggerDay: triggerDay,
+        originalEvent: triggeredEventId
+    });
+
+    console.log(`Chain event scheduled: ${chain.followUp} on day ${triggerDay}`);
+}
+
 // Trigger a specific event
-export function triggerEvent(event) {
+export function triggerEvent(event, isChainEvent = false) {
     gameState.events.activeEvent = event;
     gameState.events.triggeredEvents.push(event.id);
+    gameState.events.eventCounter++;
 
-    // Apply immediate effects
+    // Apply immediate effects (adjusted for difficulty)
     applyEventEffects(event.effects);
+
+    // Check for chain events this might trigger
+    Object.keys(EVENT_CHAINS).forEach(chainId => {
+        scheduleChainEvent(chainId, event.id);
+    });
 
     invalidateCache();
     updateDisplay();
-    showEventModal(event);
+    showEventModal(event, isChainEvent);
 }
 
-// Apply event effects to game state
+// Apply event effects to game state (with difficulty scaling for shocks)
 function applyEventEffects(effects) {
     if (!effects) return;
 
+    // Get shock severity multiplier based on difficulty
+    const severityMultiplier = getDifficultyMultiplier('shockSeverity');
+
+    // Track if this is a negative shock for achievement purposes
+    let isNegativeShock = false;
+
     if (effects.capacity) {
         if (effects.capacity.energy) {
-            gameState.capacity.energy += effects.capacity.energy;
+            const adjustedEffect = effects.capacity.energy < 0 ?
+                effects.capacity.energy * severityMultiplier :
+                effects.capacity.energy;
+            gameState.capacity.energy += adjustedEffect;
             gameState.capacity.energy = Math.max(GAME_CONSTANTS.MIN_CAPACITY, gameState.capacity.energy);
+            if (effects.capacity.energy < 0) isNegativeShock = true;
         }
         if (effects.capacity.skills) {
-            gameState.capacity.skills += effects.capacity.skills;
+            const adjustedEffect = effects.capacity.skills < 0 ?
+                effects.capacity.skills * severityMultiplier :
+                effects.capacity.skills;
+            gameState.capacity.skills += adjustedEffect;
             gameState.capacity.skills = Math.max(GAME_CONSTANTS.MIN_CAPACITY, gameState.capacity.skills);
+            if (effects.capacity.skills < 0) isNegativeShock = true;
         }
         if (effects.capacity.logistics) {
-            gameState.capacity.logistics += effects.capacity.logistics;
+            const adjustedEffect = effects.capacity.logistics < 0 ?
+                effects.capacity.logistics * severityMultiplier :
+                effects.capacity.logistics;
+            gameState.capacity.logistics += adjustedEffect;
             gameState.capacity.logistics = Math.max(GAME_CONSTANTS.MIN_CAPACITY, gameState.capacity.logistics);
+            if (effects.capacity.logistics < 0) isNegativeShock = true;
         }
     }
     if (effects.privateCredit !== undefined) {
-        gameState.privateCredit += effects.privateCredit;
-        gameState.privateCredit = Math.max(GAME_CONSTANTS.MIN_CAPACITY, gameState.privateCredit);
+        const adjustedEffect = effects.privateCredit < 0 ?
+            effects.privateCredit * severityMultiplier :
+            effects.privateCredit;
+        gameState.privateCredit += adjustedEffect;
+        gameState.privateCredit = Math.max(GAME_CONSTANTS.MIN_PRIVATE_CREDIT, gameState.privateCredit);
+        if (effects.privateCredit < 0) isNegativeShock = true;
     }
     if (effects.inflation !== undefined) {
-        gameState.inflation += effects.inflation;
+        // Positive inflation effects are worse, so apply severity to those
+        const adjustedEffect = effects.inflation > 0 ?
+            effects.inflation * severityMultiplier :
+            effects.inflation;
+        gameState.inflation += adjustedEffect;
     }
     if (effects.employment !== undefined) {
-        gameState.employment += effects.employment;
+        const adjustedEffect = effects.employment < 0 ?
+            effects.employment * severityMultiplier :
+            effects.employment;
+        gameState.employment += adjustedEffect;
         gameState.employment = Math.max(
             GAME_CONSTANTS.MIN_EMPLOYMENT,
             Math.min(GAME_CONSTANTS.MAX_EMPLOYMENT, gameState.employment)
         );
+        if (effects.employment < 0) isNegativeShock = true;
     }
     if (effects.netExports !== undefined) {
-        gameState.netExports += effects.netExports;
+        const adjustedEffect = effects.netExports < 0 ?
+            effects.netExports * severityMultiplier :
+            effects.netExports;
+        gameState.netExports += adjustedEffect;
+        if (effects.netExports < 0) isNegativeShock = true;
+    }
+
+    // Track shock for achievements
+    if (isNegativeShock) {
+        // This will be incremented when the player handles the shock via their choice
+        console.log('Negative shock applied - player must respond');
     }
 }
 
 // Show the event modal
-export function showEventModal(eventData) {
+export function showEventModal(eventData, isChainEvent = false) {
     console.log('=== SHOWING EVENT MODAL ===');
     console.log('Event data:', eventData);
+    console.log('Is chain event:', isChainEvent);
 
     const modal = document.getElementById('eventModal');
     const title = document.getElementById('eventTitle');
@@ -115,7 +239,10 @@ export function showEventModal(eventData) {
         return;
     }
 
-    title.innerHTML = `Event: ${eventData.name}`;
+    // Add chain event indicator if applicable
+    const chainIndicator = isChainEvent ?
+        '<span class="chain-event-badge">Chain Reaction!</span> ' : '';
+    title.innerHTML = `${chainIndicator}Event: ${eventData.name}`;
     description.innerHTML = eventData.description;
 
     // Build choices
@@ -195,9 +322,26 @@ export function handleEventChoice(eventData, choice) {
         gameState.actionsRemaining -= choice.cost;
     }
 
+    // Store pre-choice state for achievement tracking
+    const preChoiceEmployment = gameState.employment;
+    const preChoiceInflation = gameState.inflation;
+
     // Execute choice effect
     try {
         const resultMessage = choice.effect(gameState);
+
+        // Track shock handling for achievements
+        // If player took action (cost > 0) on a negative shock, count it
+        if (choice.cost > 0 && eventData.effects &&
+            (eventData.effects.employment < 0 ||
+             eventData.effects.privateCredit < 0 ||
+             (eventData.effects.capacity &&
+              (eventData.effects.capacity.energy < 0 ||
+               eventData.effects.capacity.skills < 0 ||
+               eventData.effects.capacity.logistics < 0)))) {
+            gameState.tracking.shocksHandled++;
+            console.log(`Shocks handled: ${gameState.tracking.shocksHandled}`);
+        }
 
         // Record in history
         gameState.events.eventHistory.push({
@@ -205,7 +349,9 @@ export function handleEventChoice(eventData, choice) {
             eventId: eventData.id,
             eventName: eventData.name,
             choice: choice.text,
-            result: resultMessage
+            result: resultMessage,
+            preEmployment: preChoiceEmployment,
+            preInflation: preChoiceInflation
         });
 
         // Clear active event
@@ -213,6 +359,9 @@ export function handleEventChoice(eventData, choice) {
 
         invalidateCache();
         updateDisplay();
+
+        // Check for newly unlocked achievements
+        checkAchievements();
 
         // Show result modal
         showEventResultModal(eventData.name, choice.text, resultMessage, eventData.mmtLesson);
@@ -225,6 +374,34 @@ export function handleEventChoice(eventData, choice) {
         console.error('ERROR in handleEventChoice:', error);
         alert('An error occurred processing your choice: ' + error.message);
     }
+}
+
+// Check and unlock achievements
+export function checkAchievements() {
+    if (!gameState.achievements) {
+        gameState.achievements = [];
+    }
+
+    Object.values(ACHIEVEMENTS).forEach(achievement => {
+        // Skip already unlocked achievements
+        if (gameState.achievements.includes(achievement.id)) return;
+
+        // Check condition
+        try {
+            if (achievement.condition(gameState)) {
+                gameState.achievements.push(achievement.id);
+                gameState.mmtScore += achievement.points;
+                console.log(`Achievement unlocked: ${achievement.name}`);
+
+                // Show achievement notification
+                if (typeof showAchievementUnlock === 'function') {
+                    showAchievementUnlock(achievement);
+                }
+            }
+        } catch (e) {
+            // Condition check failed, skip
+        }
+    });
 }
 
 // Show event result modal

@@ -1,9 +1,10 @@
 /**
  * ui.js - DOM updates and user interface management
- * Keystroke Kingdom v6.0
+ * Keystroke Kingdom v7.0 - Enhanced Drama & Gameplay Update
  */
 
-import { gameState, getTotalCapacity, getAggregateDemand, getChangedFields, clearChangedFields } from './gameState.js';
+import { gameState, getTotalCapacity, getAggregateDemand, getChangedFields, clearChangedFields, resetState } from './gameState.js';
+import { DIFFICULTY_SETTINGS, GAME_MODES, ACHIEVEMENTS } from './config.js';
 
 // DOM element cache to avoid redundant queries
 const elementCache = new Map();
@@ -251,6 +252,253 @@ export function closeMMTInsight() {
 // Make closeMMTInsight available globally for onclick
 if (typeof window !== 'undefined') {
     window.closeMMTInsight = closeMMTInsight;
+}
+
+// ============================================
+// ACHIEVEMENT NOTIFICATIONS
+// ============================================
+
+// Show achievement unlock notification
+export function showAchievementUnlock(achievement) {
+    // Create achievement notification
+    let notification = document.getElementById('achievementNotification');
+
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'achievementNotification';
+        notification.className = 'achievement-notification';
+        notification.innerHTML = `
+            <div class="achievement-content">
+                <div class="achievement-icon"></div>
+                <div class="achievement-info">
+                    <div class="achievement-title">Achievement Unlocked!</div>
+                    <div class="achievement-name"></div>
+                    <div class="achievement-desc"></div>
+                    <div class="achievement-points"></div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(notification);
+    }
+
+    // Update content
+    notification.querySelector('.achievement-icon').textContent = achievement.icon;
+    notification.querySelector('.achievement-name').textContent = achievement.name;
+    notification.querySelector('.achievement-desc').textContent = achievement.description;
+    notification.querySelector('.achievement-points').textContent = `+${achievement.points} points`;
+
+    // Show notification
+    notification.classList.add('active');
+
+    // Hide after 4 seconds
+    setTimeout(() => {
+        notification.classList.remove('active');
+    }, 4000);
+}
+
+// ============================================
+// GAME SETUP MODAL
+// ============================================
+
+// Show the game setup modal
+export function showGameSetupModal() {
+    let modal = document.getElementById('gameSetupModal');
+
+    if (!modal) {
+        modal = createGameSetupModal();
+    }
+
+    // Populate options
+    populateGameSetupOptions();
+
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+}
+
+// Create the game setup modal dynamically
+function createGameSetupModal() {
+    const modal = document.createElement('div');
+    modal.id = 'gameSetupModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content game-setup-modal">
+            <h2>New Game Setup</h2>
+
+            <div class="setup-section">
+                <h3>Difficulty</h3>
+                <div class="difficulty-options" id="difficultyOptions"></div>
+            </div>
+
+            <div class="setup-section">
+                <h3>Game Mode</h3>
+                <div class="mode-options" id="gameModeOptions"></div>
+            </div>
+
+            <div class="setup-actions">
+                <button class="btn btn-secondary" onclick="closeGameSetupModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="startNewGame()">Start Game</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    return modal;
+}
+
+// Populate game setup options
+function populateGameSetupOptions() {
+    const diffContainer = document.getElementById('difficultyOptions');
+    const modeContainer = document.getElementById('gameModeOptions');
+
+    if (diffContainer) {
+        diffContainer.innerHTML = '';
+        Object.entries(DIFFICULTY_SETTINGS).forEach(([key, diff]) => {
+            const option = document.createElement('div');
+            option.className = `setup-option ${key === 'normal' ? 'selected' : ''}`;
+            option.dataset.value = key;
+            option.onclick = () => selectDifficulty(key);
+            option.innerHTML = `
+                <div class="option-name">${diff.name}</div>
+                <div class="option-desc">${diff.description}</div>
+            `;
+            diffContainer.appendChild(option);
+        });
+    }
+
+    if (modeContainer) {
+        modeContainer.innerHTML = '';
+        Object.entries(GAME_MODES).forEach(([key, mode]) => {
+            const option = document.createElement('div');
+            option.className = `setup-option ${key === 'standard' ? 'selected' : ''}`;
+            option.dataset.value = key;
+            option.onclick = () => selectGameMode(key);
+            option.innerHTML = `
+                <div class="option-name">${mode.name}</div>
+                <div class="option-desc">${mode.description}</div>
+            `;
+            modeContainer.appendChild(option);
+        });
+    }
+}
+
+// Track selected options
+let selectedDifficulty = 'normal';
+let selectedGameMode = 'standard';
+
+function selectDifficulty(diff) {
+    selectedDifficulty = diff;
+    document.querySelectorAll('#difficultyOptions .setup-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.value === diff);
+    });
+}
+
+function selectGameMode(mode) {
+    selectedGameMode = mode;
+    document.querySelectorAll('#gameModeOptions .setup-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.value === mode);
+    });
+}
+
+// Close game setup modal
+export function closeGameSetupModal() {
+    const modal = document.getElementById('gameSetupModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+}
+
+// Start a new game with selected options
+export function startNewGame() {
+    resetState(selectedDifficulty, selectedGameMode);
+    closeGameSetupModal();
+    updateDisplay();
+
+    // Show mode-specific intro message
+    const mode = GAME_MODES[selectedGameMode];
+    const diff = DIFFICULTY_SETTINGS[selectedDifficulty];
+
+    showFloatingFeedback(`${mode.name} - ${diff.name}`, 'positive');
+}
+
+// Make functions available globally
+if (typeof window !== 'undefined') {
+    window.showGameSetupModal = showGameSetupModal;
+    window.closeGameSetupModal = closeGameSetupModal;
+    window.startNewGame = startNewGame;
+}
+
+// ============================================
+// ACHIEVEMENTS PANEL
+// ============================================
+
+// Show achievements panel
+export function showAchievementsPanel() {
+    let modal = document.getElementById('achievementsModal');
+
+    if (!modal) {
+        modal = createAchievementsModal();
+    }
+
+    populateAchievements();
+
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+}
+
+// Create achievements modal
+function createAchievementsModal() {
+    const modal = document.createElement('div');
+    modal.id = 'achievementsModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content achievements-modal">
+            <div class="modal-header">
+                <h2>Achievements</h2>
+                <button class="modal-close" onclick="closeAchievementsModal()">&times;</button>
+            </div>
+            <div class="achievements-grid" id="achievementsGrid"></div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    return modal;
+}
+
+// Populate achievements list
+function populateAchievements() {
+    const grid = document.getElementById('achievementsGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+
+    Object.values(ACHIEVEMENTS).forEach(achievement => {
+        const unlocked = gameState.achievements?.includes(achievement.id);
+        const card = document.createElement('div');
+        card.className = `achievement-card ${unlocked ? 'unlocked' : 'locked'}`;
+        card.innerHTML = `
+            <div class="achievement-card-icon">${unlocked ? achievement.icon : '?'}</div>
+            <div class="achievement-card-info">
+                <div class="achievement-card-name">${achievement.name}</div>
+                <div class="achievement-card-desc">${unlocked ? achievement.description : '???'}</div>
+                <div class="achievement-card-points">${achievement.points} pts</div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// Close achievements modal
+export function closeAchievementsModal() {
+    const modal = document.getElementById('achievementsModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+}
+
+// Make available globally
+if (typeof window !== 'undefined') {
+    window.showAchievementsPanel = showAchievementsPanel;
+    window.closeAchievementsModal = closeAchievementsModal;
 }
 
 // ============================================

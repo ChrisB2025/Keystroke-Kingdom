@@ -1,6 +1,6 @@
 /**
  * main.js - Main entry point and initialization
- * Keystroke Kingdom v6.0
+ * Keystroke Kingdom v7.0 - Enhanced Drama & Gameplay Update
  *
  * This module orchestrates all game modules and provides
  * backward-compatible window exports for HTML onclick handlers.
@@ -17,8 +17,15 @@ import {
     updateRecommendedActions,
     updateEmploymentBar,
     updateInflationZone,
-    updateServicesBar
+    updateServicesBar,
+    showGameSetupModal,
+    closeGameSetupModal,
+    startNewGame,
+    showAchievementsPanel,
+    closeAchievementsModal,
+    showAchievementUnlock
 } from './ui.js';
+import { DIFFICULTY_SETTINGS } from './config.js';
 import {
     nextTurn,
     publicSpending,
@@ -71,6 +78,9 @@ async function init() {
     updateInflationZone();
     updateServicesBar();
 
+    // Update difficulty badge
+    updateDifficultyBadge();
+
     // Initialize recommended actions
     updateRecommendedActions();
 
@@ -78,7 +88,17 @@ async function init() {
     setupEventHandlers();
 
     console.log('=== INIT COMPLETE ===');
-    console.log('Using ES6 modules with onclick function assignment (CSP-friendly)');
+    console.log('Keystroke Kingdom v7.0 - Enhanced Drama & Gameplay Update');
+}
+
+// Update the difficulty badge in the header
+function updateDifficultyBadge() {
+    const badge = document.getElementById('difficultyBadge');
+    if (badge && gameState.difficulty) {
+        const diffSettings = DIFFICULTY_SETTINGS[gameState.difficulty];
+        badge.textContent = diffSettings ? diffSettings.name : 'Normal';
+        badge.className = `difficulty-badge ${gameState.difficulty}`;
+    }
 }
 
 // Set up event handlers for modals
@@ -156,6 +176,13 @@ window.showFloatingFeedback = showFloatingFeedback;
 window.pulseElement = pulseElement;
 window.animateValue = animateValue;
 window.updateRecommendedActions = updateRecommendedActions;
+
+// v7.0 Game setup and achievements functions
+window.showGameSetupModal = showGameSetupModal;
+window.closeGameSetupModal = closeGameSetupModal;
+window.startNewGame = startNewGame;
+window.showAchievementsPanel = showAchievementsPanel;
+window.closeAchievementsModal = closeAchievementsModal;
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', init);

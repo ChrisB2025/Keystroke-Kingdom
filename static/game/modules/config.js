@@ -1,7 +1,264 @@
 /**
  * config.js - Game constants, MMT knowledge, and economic events configuration
- * Keystroke Kingdom v6.0
+ * Keystroke Kingdom v7.0 - Enhanced Drama & Gameplay Update
  */
+
+// ============================================
+// DIFFICULTY LEVELS
+// ============================================
+export const DIFFICULTY_SETTINGS = {
+    easy: {
+        name: 'Easy',
+        description: 'Forgiving inflation tolerance, fewer shocks, more actions per turn',
+        inflationTarget: { min: 1.0, max: 5.0 },
+        inflationMultiplier: 0.7,  // Inflation rises slower
+        eventProbabilityMultiplier: 0.6,  // Fewer events
+        actionsPerTurn: 4,
+        capacityFluctuationRange: 0.1,  // Smaller random changes
+        scoreMultiplier: 0.8,  // Lower score multiplier
+        shockSeverityMultiplier: 0.7  // Shocks are less severe
+    },
+    normal: {
+        name: 'Normal',
+        description: 'Balanced challenge with standard mechanics',
+        inflationTarget: { min: 2.0, max: 3.0 },
+        inflationMultiplier: 1.0,
+        eventProbabilityMultiplier: 1.0,
+        actionsPerTurn: 3,
+        capacityFluctuationRange: 0.2,
+        scoreMultiplier: 1.0,
+        shockSeverityMultiplier: 1.0
+    },
+    hard: {
+        name: 'Hard',
+        description: 'Strict inflation targets, more frequent shocks, chain reactions',
+        inflationTarget: { min: 1.5, max: 2.5 },
+        inflationMultiplier: 1.4,  // Inflation rises faster
+        eventProbabilityMultiplier: 1.5,  // More events
+        actionsPerTurn: 3,
+        capacityFluctuationRange: 0.4,  // Larger random changes
+        scoreMultiplier: 1.5,  // Higher score multiplier
+        shockSeverityMultiplier: 1.3  // Shocks are more severe
+    }
+};
+
+// ============================================
+// GAME MODES
+// ============================================
+export const GAME_MODES = {
+    standard: {
+        name: 'Standard',
+        description: '30 days to build a prosperous economy',
+        totalDays: 30,
+        startingState: null,  // Use default
+        objectives: null  // Use default scoring
+    },
+    depression_recovery: {
+        name: 'Depression Recovery',
+        description: 'Start with 60% employment and high private debt. Can you engineer a recovery?',
+        totalDays: 30,
+        startingState: {
+            employment: 60,
+            inflation: 0.5,
+            privateCredit: 30,
+            publicSpending: 25,
+            capacity: { energy: 60, skills: 55, logistics: 65 }
+        },
+        objectives: {
+            employment: { target: 90, bonus: 50 },
+            stabilityStreak: { target: 10, bonus: 30 }
+        }
+    },
+    green_transition: {
+        name: 'Green Transition',
+        description: 'Transform to a sustainable economy while maintaining prosperity',
+        totalDays: 40,
+        startingState: {
+            employment: 85,
+            inflation: 2.5,
+            capacity: { energy: 50, skills: 70, logistics: 60 }
+        },
+        objectives: {
+            greenInvestment: { target: 100, bonus: 75 },
+            capacityGrowth: { target: 50, bonus: 40 }
+        },
+        forcedEvents: ['greenTransition']
+    },
+    inflation_crisis: {
+        name: 'Inflation Crisis',
+        description: 'Inherited 8% inflation and overheating economy. Achieve a soft landing.',
+        totalDays: 25,
+        startingState: {
+            employment: 98,
+            inflation: 8.0,
+            privateCredit: 80,
+            publicSpending: 70,
+            capacity: { energy: 55, skills: 60, logistics: 58 }
+        },
+        objectives: {
+            inflationTarget: { target: 3.0, bonus: 60 },
+            employmentFloor: { target: 85, bonus: 40 }
+        }
+    },
+    sandbox: {
+        name: 'Sandbox',
+        description: 'No time limit. Explore mechanics freely with all events available.',
+        totalDays: 999,
+        startingState: null,
+        eventsRepeatable: true,
+        unlimitedActions: false
+    }
+};
+
+// ============================================
+// ACHIEVEMENTS SYSTEM
+// ============================================
+export const ACHIEVEMENTS = {
+    // Employment achievements
+    full_employment_streak: {
+        id: 'full_employment_streak',
+        name: 'Full Employment Champion',
+        description: 'Maintain 95%+ employment for 10 consecutive days',
+        icon: '👷',
+        condition: (state) => state.tracking?.fullEmploymentStreak >= 10,
+        points: 100,
+        mmtLesson: 'Full employment is always achievable with proper fiscal policy!'
+    },
+    job_guarantee_master: {
+        id: 'job_guarantee_master',
+        name: 'Buffer Stock Builder',
+        description: 'Keep Job Guarantee active for 15+ days',
+        icon: '🛡️',
+        condition: (state) => state.tracking?.jgActiveDays >= 15,
+        points: 75,
+        mmtLesson: 'The JG provides automatic stabilization and price anchoring.'
+    },
+
+    // Inflation achievements
+    goldilocks_economy: {
+        id: 'goldilocks_economy',
+        name: 'Goldilocks Economy',
+        description: 'Keep inflation between 2-3% for 15 days',
+        icon: '🎯',
+        condition: (state) => state.tracking?.stableInflationStreak >= 15,
+        points: 100,
+        mmtLesson: 'Price stability comes from real resource management, not money supply.'
+    },
+    inflation_tamer: {
+        id: 'inflation_tamer',
+        name: 'Inflation Tamer',
+        description: 'Reduce inflation from 5%+ to under 3%',
+        icon: '🔥',
+        condition: (state) => state.tracking?.tamedInflation === true,
+        points: 75,
+        mmtLesson: 'Inflation is cooled by reducing demand or expanding capacity.'
+    },
+
+    // Crisis management achievements
+    shock_absorber: {
+        id: 'shock_absorber',
+        name: 'Shock Absorber',
+        description: 'Successfully navigate 3 economic shocks',
+        icon: '🛡️',
+        condition: (state) => state.tracking?.shocksHandled >= 3,
+        points: 80,
+        mmtLesson: 'Automatic stabilizers and counter-cyclical policy protect the economy.'
+    },
+    crisis_manager: {
+        id: 'crisis_manager',
+        name: 'Crisis Manager',
+        description: 'Recover from a recession (employment drop >10%) within 5 days',
+        icon: '📈',
+        condition: (state) => state.tracking?.fastRecovery === true,
+        points: 100,
+        mmtLesson: 'Fiscal stimulus can quickly restore full employment.'
+    },
+
+    // Capacity achievements
+    capacity_builder: {
+        id: 'capacity_builder',
+        name: 'Capacity Builder',
+        description: 'Increase all capacity types by 30+ from starting values',
+        icon: '🏗️',
+        condition: (state) => {
+            if (!state.tracking?.startingCapacity) return false;
+            return (state.capacity.energy - state.tracking.startingCapacity.energy >= 30) &&
+                   (state.capacity.skills - state.tracking.startingCapacity.skills >= 30) &&
+                   (state.capacity.logistics - state.tracking.startingCapacity.logistics >= 30);
+        },
+        points: 90,
+        mmtLesson: 'Expanding productive capacity is the path to non-inflationary growth.'
+    },
+
+    // MMT mastery achievements
+    mmt_scholar: {
+        id: 'mmt_scholar',
+        name: 'MMT Scholar',
+        description: 'Unlock all 8 MMT insight badges',
+        icon: '🎓',
+        condition: (state) => state.mmtBadges?.length >= 8,
+        points: 150,
+        mmtLesson: 'You understand the key principles of Modern Monetary Theory!'
+    },
+    deficit_dove: {
+        id: 'deficit_dove',
+        name: 'Deficit Dove',
+        description: 'Run a deficit of $50B+ while maintaining low inflation',
+        icon: '🕊️',
+        condition: (state) => state.deficit >= 50 && state.inflation < 3.5,
+        points: 80,
+        mmtLesson: 'Deficits are sustainable when there is productive capacity to absorb spending.'
+    },
+
+    // Challenge achievements
+    no_jg_victory: {
+        id: 'no_jg_victory',
+        name: 'Classical Victory',
+        description: 'Achieve 95% employment without using Job Guarantee',
+        icon: '🏛️',
+        condition: (state) => state.employment >= 95 && !state.jgEnabled && !state.tracking?.everUsedJG,
+        points: 120,
+        mmtLesson: 'Fiscal policy can achieve full employment, but JG makes it automatic.'
+    },
+    balanced_budget: {
+        id: 'balanced_budget',
+        name: 'Against the Odds',
+        description: 'Maintain 90%+ employment with a balanced budget (deficit near 0)',
+        icon: '⚖️',
+        condition: (state) => state.employment >= 90 && Math.abs(state.deficit) < 5,
+        points: 100,
+        mmtLesson: 'Balanced budgets are possible with strong private sector spending.'
+    }
+};
+
+// ============================================
+// DYNAMIC EVENT CHAINS
+// ============================================
+export const EVENT_CHAINS = {
+    // Credit boom can lead to deleveraging
+    credit_to_deleveraging: {
+        trigger: 'creditBoom',
+        followUp: 'deleveraging',
+        probability: 0.4,
+        delayDays: { min: 3, max: 6 },
+        condition: (state) => state.privateCredit > 70
+    },
+    // Energy crisis can trigger currency speculation
+    energy_to_currency: {
+        trigger: 'energyCrisis',
+        followUp: 'currencyAttack',
+        probability: 0.35,
+        delayDays: { min: 2, max: 4 },
+        condition: (state) => state.netExports < -30
+    },
+    // High deficit triggers hawk backlash
+    spending_to_hawks: {
+        trigger: null,  // Condition-triggered, not event-triggered
+        followUp: 'deficitHawks',
+        probability: 0.5,
+        condition: (state) => state.publicSpending > 80 && state.currentDay > 12
+    }
+};
 
 // MMT Knowledge Base
 export const mmtKnowledge = `
@@ -34,7 +291,9 @@ export const GAME_CONSTANTS = {
     MIN_CAPACITY: 10,
     MIN_PRIVATE_CREDIT: 20,
     JG_ABSORPTION_RATE: 0.7,
-    AUTO_SAVE_DEBOUNCE_MS: 2000
+    AUTO_SAVE_DEBOUNCE_MS: 2000,
+    DEFAULT_DIFFICULTY: 'normal',
+    DEFAULT_GAME_MODE: 'standard'
 };
 
 // Economic Events System
