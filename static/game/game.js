@@ -741,8 +741,11 @@ async function callClaudeAPIProxy(messages) {
                 choiceBtn.setAttribute('data-choice-index', index);
                 choiceBtn.setAttribute('type', 'button');
 
-                // Use inline onclick instead of addEventListener to bypass CSP
-                choiceBtn.setAttribute('onclick', `window.handleEventChoiceByIndex(${index})`);
+                // Set onclick as a function reference instead of string to bypass CSP
+                choiceBtn.onclick = () => {
+                    console.log('Button clicked via onclick function:', choice.text);
+                    window.handleEventChoiceByIndex(index);
+                };
 
                 choiceBtn.innerHTML = `
                     <div class="choice-main">
@@ -753,7 +756,7 @@ async function callClaudeAPIProxy(messages) {
                 `;
 
                 choicesContainer.appendChild(choiceBtn);
-                console.log(`Button ${index + 1} appended to container with onclick`);
+                console.log(`Button ${index + 1} appended to container with onclick function`);
             });
 
             console.log('All buttons created. Children count:', choicesContainer.children.length);
@@ -901,9 +904,33 @@ async function callClaudeAPIProxy(messages) {
             selectLocation('treasury');
             loadHighScores();
 
-            // No need for event listeners on close buttons anymore - using inline onclick
+            // Set up onclick handlers using function assignment (CSP-friendly)
+            const eventCloseBtn = document.getElementById('eventModalCloseBtn');
+            if (eventCloseBtn) {
+                eventCloseBtn.onclick = () => {
+                    console.log('Event modal close clicked');
+                    closeEventModal();
+                };
+            }
+
+            const resultContinueBtn = document.getElementById('eventResultContinueBtn');
+            if (resultContinueBtn) {
+                resultContinueBtn.onclick = () => {
+                    console.log('Event result continue clicked');
+                    closeEventResultModal();
+                };
+            }
+
+            const advisorFab = document.getElementById('advisorFab');
+            if (advisorFab) {
+                advisorFab.onclick = () => {
+                    console.log('Advisor FAB clicked');
+                    openAdvisor();
+                };
+            }
+
             console.log('=== INIT COMPLETE ===');
-            console.log('Using inline onclick attributes for event handling (CSP-friendly)');
+            console.log('Using onclick function assignment (CSP-friendly)');
         }
 
         function updateDisplay() {
