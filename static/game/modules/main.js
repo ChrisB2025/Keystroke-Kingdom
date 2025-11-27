@@ -137,6 +137,25 @@ function setupEventHandlers() {
             }
         });
     }
+
+    // Add ripple effect to action cards
+    setupRippleEffect();
+}
+
+// Add ripple effect to action cards for better microinteraction
+function setupRippleEffect() {
+    document.addEventListener('click', function(event) {
+        const actionCard = event.target.closest('.action-card');
+        if (actionCard) {
+            // Add clicked class for ripple animation
+            actionCard.classList.add('clicked');
+
+            // Remove the class after animation completes
+            setTimeout(() => {
+                actionCard.classList.remove('clicked');
+            }, 600);
+        }
+    });
 }
 
 // Export functions to window for backward compatibility with HTML onclick handlers
