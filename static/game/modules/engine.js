@@ -127,28 +127,29 @@ export function publicSpending(sector, amount) {
     // Update sectoral balances after spending change
     updateSectoralBalances();
 
-    // MMT Teaching Moment: Show insight on first few spending actions
-    if (gameState.currentDay <= 10) {
-        showMMTInsight('spending_creates_money');
-    }
-
     // Award MMT points for using fiscal policy appropriately
     const demandGap = getAggregateDemand() - getTotalCapacity();
     if (amount > 0 && demandGap < 0) {
         // Spending when there's slack - MMT-aligned!
         awardMMTPoints(5, 'Fiscal expansion with spare capacity');
-    } else if (amount > 0 && demandGap > 20 && gameState.inflation > 4) {
-        // Spending when already overheating - risky but educational
-        setTimeout(() => {
-            showMMTInsight('real_resource_constraint');
-        }, 500);
     }
 
-    // Track deficit for MMT insight
-    if (gameState.deficit > 20 && !gameState.events.mmtInsightsShown.includes('deficit_is_private_wealth')) {
-        setTimeout(() => {
-            showMMTInsight('deficit_is_private_wealth');
-        }, 1000);
+    // MMT Teaching Moment: Show only ONE insight per action (priority order)
+    let insightShown = false;
+
+    // First priority: spending creates money (early game)
+    if (!insightShown && gameState.currentDay <= 10) {
+        insightShown = showMMTInsight('spending_creates_money');
+    }
+
+    // Second priority: real resource constraint (when overheating)
+    if (!insightShown && amount > 0 && demandGap > 20 && gameState.inflation > 4) {
+        insightShown = showMMTInsight('real_resource_constraint');
+    }
+
+    // Third priority: deficit creates private wealth (when deficit is significant)
+    if (!insightShown && gameState.deficit > 20) {
+        insightShown = showMMTInsight('deficit_is_private_wealth');
     }
 
     // Sector-specific services bonuses
@@ -235,20 +236,18 @@ export function toggleJobGuarantee() {
 
     gameState.jgEnabled = !gameState.jgEnabled;
 
-    // MMT Teaching Moments for Job Guarantee
+    // MMT Teaching Moments for Job Guarantee - only show ONE insight per action
     if (gameState.jgEnabled) {
         const unemploymentRate = 100 - gameState.employment;
 
-        // Show buffer stock insight
-        showMMTInsight('jg_buffer_stock');
-        awardMMTPoints(15, 'Enabled Job Guarantee');
-
-        // If enabling JG with significant unemployment, extra insight
-        if (unemploymentRate > 10) {
-            setTimeout(() => {
-                showMMTInsight('jg_price_anchor');
-            }, 2000);
+        // Show buffer stock insight first, OR price anchor if buffer stock already seen
+        if (!gameState.events.mmtInsightsShown.includes('jg_buffer_stock')) {
+            showMMTInsight('jg_buffer_stock');
+        } else if (unemploymentRate > 10) {
+            // Only show price anchor if buffer stock was already shown previously
+            showMMTInsight('jg_price_anchor');
         }
+        awardMMTPoints(15, 'Enabled Job Guarantee');
     }
 
     // Show visual feedback
@@ -279,11 +278,6 @@ export function adjustTax(amount) {
     // Update sectoral balances
     updateSectoralBalances();
 
-    // MMT Teaching Moment: Taxes delete money
-    if (gameState.currentDay <= 15) {
-        showMMTInsight('taxes_delete_money');
-    }
-
     // MMT scoring based on context
     const demandGap = getAggregateDemand() - getTotalCapacity();
 
@@ -298,11 +292,17 @@ export function adjustTax(amount) {
         awardMMTPoints(5, 'Stimulative tax cut with spare capacity');
     }
 
-    // Sectoral balances insight if running a surplus
-    if (gameState.deficit < 0) {
-        setTimeout(() => {
-            showMMTInsight('sectoral_balances');
-        }, 500);
+    // MMT Teaching Moment: Show only ONE insight per action (priority order)
+    let insightShown = false;
+
+    // First priority: taxes delete money (early/mid game)
+    if (!insightShown && gameState.currentDay <= 15) {
+        insightShown = showMMTInsight('taxes_delete_money');
+    }
+
+    // Second priority: sectoral balances (if running a surplus)
+    if (!insightShown && gameState.deficit < 0) {
+        insightShown = showMMTInsight('sectoral_balances');
     }
 
     // Show visual feedback
