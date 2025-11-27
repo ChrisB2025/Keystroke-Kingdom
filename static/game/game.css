@@ -47,7 +47,424 @@
                 transform: scale(1);
             }
         }
-        
+
+        /* ============================================
+           PRIMARY STATS - Redesigned HUD
+           ============================================ */
+        .primary-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .primary-stat {
+            background: white;
+            border-radius: 8px;
+            padding: 10px 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .primary-stat:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .primary-stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .primary-stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .primary-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            transition: color 0.3s, transform 0.3s;
+        }
+
+        .primary-stat-value.good { color: #059669; }
+        .primary-stat-value.warning { color: #d97706; }
+        .primary-stat-value.bad { color: #dc2626; }
+
+        .primary-stat-value.pulse {
+            animation: statPulse 0.5s ease;
+        }
+
+        @keyframes statPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        /* Employment Progress Bar */
+        .progress-bar-container {
+            position: relative;
+        }
+
+        .progress-bar-track {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            position: relative;
+            overflow: visible;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease, background 0.3s;
+        }
+
+        .progress-bar-fill.employment-fill {
+            background: linear-gradient(90deg, #dc2626 0%, #d97706 60%, #059669 85%, #059669 100%);
+            background-size: 200% 100%;
+        }
+
+        .progress-bar-target {
+            position: absolute;
+            top: -2px;
+            width: 2px;
+            height: 12px;
+            background: #1e293b;
+            border-radius: 1px;
+            transform: translateX(-50%);
+        }
+
+        .progress-bar-target::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid #1e293b;
+        }
+
+        .progress-target-label {
+            font-size: 9px;
+            color: #94a3b8;
+            margin-top: 2px;
+            display: block;
+            text-align: right;
+        }
+
+        /* Inflation Zone Indicator */
+        .inflation-zone-indicator {
+            display: flex;
+            gap: 2px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .zone {
+            flex: 1;
+            padding: 4px 6px;
+            text-align: center;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            transition: all 0.3s;
+        }
+
+        .zone-low {
+            background: #dbeafe;
+            color: #3b82f6;
+        }
+
+        .zone-good {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .zone-high {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .zone.active {
+            transform: scaleY(1.1);
+            font-weight: 700;
+        }
+
+        .zone-low.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .zone-good.active {
+            background: #059669;
+            color: white;
+        }
+
+        .zone-high.active {
+            background: #dc2626;
+            color: white;
+        }
+
+        /* Services Score Bar */
+        .services-indicator {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .services-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #7c3aed, #a855f7);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        /* ============================================
+           ADVANCED STATS ACCORDION
+           ============================================ */
+        .advanced-stats-accordion {
+            background: #f8fafc;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .accordion-toggle {
+            width: 100%;
+            padding: 8px 12px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            transition: background 0.2s;
+        }
+
+        .accordion-toggle:hover {
+            background: #e2e8f0;
+        }
+
+        .accordion-icon {
+            font-size: 10px;
+            transition: transform 0.3s;
+        }
+
+        .accordion-toggle.expanded .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s;
+            padding: 0 12px;
+        }
+
+        .accordion-content.expanded {
+            max-height: 200px;
+            padding: 8px 12px 12px;
+        }
+
+        /* ============================================
+           RECOMMENDED ACTIONS PANEL
+           ============================================ */
+        .recommended-actions-panel {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .recommended-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .recommended-icon {
+            font-size: 16px;
+        }
+
+        .recommended-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #92400e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .recommended-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .recommended-action {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-radius: 6px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 44px;
+        }
+
+        .recommended-action:hover {
+            border-color: #f59e0b;
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+        }
+
+        .recommended-action:active {
+            transform: translateX(2px);
+            background: #f59e0b;
+        }
+
+        .recommended-action:active .recommended-action-name,
+        .recommended-action:active .recommended-action-preview,
+        .recommended-action:active .recommended-arrow {
+            color: white;
+        }
+
+        .recommended-action-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            text-align: left;
+        }
+
+        .recommended-action-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .recommended-action-preview {
+            font-size: 10px;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .recommended-arrow {
+            font-size: 16px;
+            color: #f59e0b;
+            font-weight: bold;
+        }
+
+        /* ============================================
+           FLOATING FEEDBACK SYSTEM
+           ============================================ */
+        .floating-feedback-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1500;
+        }
+
+        .floating-feedback {
+            position: absolute;
+            font-size: 18px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            animation: floatUp 1.5s ease-out forwards;
+            white-space: nowrap;
+        }
+
+        .floating-feedback.positive {
+            color: #059669;
+        }
+
+        .floating-feedback.negative {
+            color: #dc2626;
+        }
+
+        .floating-feedback.neutral {
+            color: #3b82f6;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-30px) scale(1.1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-60px) scale(0.9);
+            }
+        }
+
+        /* Impact Preview Tooltip */
+        .action-card {
+            position: relative;
+        }
+
+        .action-preview-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            z-index: 100;
+            margin-bottom: 8px;
+        }
+
+        .action-preview-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid #1e293b;
+        }
+
+        .action-card:hover .action-preview-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .preview-effect {
+            display: block;
+            margin-top: 2px;
+        }
+
+        .preview-effect.positive { color: #4ade80; }
+        .preview-effect.negative { color: #f87171; }
+
         .game-container {
             width: 100vw;
             height: 100vh;
@@ -1288,6 +1705,43 @@
 
         /* Mobile Responsive */
         @media (max-width: 600px) {
+            /* Primary Stats - Stack vertically on mobile */
+            .primary-stats {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+
+            .primary-stat {
+                padding: 8px 12px;
+            }
+
+            .primary-stat-value {
+                font-size: 16px;
+            }
+
+            /* Recommended Actions - Full width cards */
+            .recommended-actions-panel {
+                padding: 8px 10px;
+            }
+
+            .recommended-action {
+                min-height: 48px;
+                padding: 10px 12px;
+            }
+
+            .recommended-action-name {
+                font-size: 14px;
+            }
+
+            /* Advanced Stats Accordion */
+            .accordion-content.expanded {
+                max-height: 300px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
             .two-column-layout {
                 grid-template-columns: 1fr;
             }
@@ -1310,24 +1764,78 @@
             }
 
             .capacity-indicators-wrapper {
-                grid-template-columns: 1fr 120px;
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+
+            .capacity-section {
+                order: 1;
+            }
+
+            .policy-indicators {
+                order: 2;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .indicator-btn {
+                flex: 1;
+                min-width: 80px;
+            }
+
+            /* Location Buttons - Larger touch targets for mobile */
+            .location-buttons {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 4px;
             }
 
             .location-btn {
-                font-size: 18px;
-                padding: 3px;
+                font-size: 22px;
+                padding: 8px;
+                min-height: 48px;
+                min-width: 48px;
             }
 
             .location-btn-text {
-                font-size: 8px;
+                font-size: 9px;
+                margin-top: 2px;
+            }
+
+            /* Content Area Wrapper - Stack on mobile */
+            .content-area-wrapper {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+
+            .content-area {
+                max-height: 40vh;
+            }
+
+            /* Action Cards - Larger touch targets */
+            .action-card {
+                min-height: 52px;
+                padding: 12px 14px;
+            }
+
+            .action-icon {
+                font-size: 26px;
+            }
+
+            .action-name {
+                font-size: 14px;
+            }
+
+            .action-desc {
+                font-size: 12px;
             }
 
             .advisor-panel {
                 width: 95%;
+                max-height: 90vh;
             }
 
             .conversation-history {
-                max-height: 300px;
+                max-height: 250px;
             }
 
             .event-modal, .event-result-modal {
@@ -1338,10 +1846,61 @@
             .event-choice-btn {
                 flex-direction: column;
                 align-items: flex-start;
+                min-height: 52px;
+                padding: 14px;
             }
 
             .choice-cost {
                 margin-left: 0;
                 margin-top: 8px;
+            }
+
+            /* Advisor FAB - Larger for mobile */
+            .advisor-fab {
+                width: 56px;
+                height: 56px;
+                font-size: 24px;
+                bottom: 16px;
+                right: 16px;
+            }
+
+            /* Next Button and Actions Badge - Larger touch targets */
+            .action-controls {
+                gap: 8px;
+            }
+
+            .actions-badge {
+                min-height: 48px;
+                font-size: 14px;
+            }
+
+            .next-button {
+                min-height: 48px;
+                font-size: 14px;
+            }
+
+            /* Hide action preview tooltips on mobile (use tap instead) */
+            .action-preview-tooltip {
+                display: none;
+            }
+        }
+
+        /* Tablet breakpoint */
+        @media (min-width: 601px) and (max-width: 900px) {
+            .primary-stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .location-btn {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            .action-card {
+                min-height: 48px;
             }
         }

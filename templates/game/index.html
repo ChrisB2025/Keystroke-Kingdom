@@ -75,44 +75,81 @@
                 <button class="highscore-button" onclick="showHighScores()">&#127942; High Scores</button>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-box employment-box">
-                    <div class="stat-label">Employment</div>
-                    <div class="stat-value good" id="employmentStat">85%</div>
+            <!-- PRIMARY METRICS - Always Visible -->
+            <div class="primary-stats">
+                <div class="primary-stat employment-stat">
+                    <div class="primary-stat-header">
+                        <span class="primary-stat-label">Employment</span>
+                        <span class="primary-stat-value" id="employmentStat">85%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill employment-fill" id="employmentBar" style="width: 89%"></div>
+                            <div class="progress-bar-target" style="left: 95%"></div>
+                        </div>
+                        <span class="progress-target-label">Target: 95%</span>
+                    </div>
                 </div>
-                <div class="stat-box inflation-box">
-                    <div class="stat-label">Inflation</div>
-                    <div class="stat-value good" id="inflationStat">2.0%</div>
+                <div class="primary-stat inflation-stat">
+                    <div class="primary-stat-header">
+                        <span class="primary-stat-label">Inflation</span>
+                        <span class="primary-stat-value" id="inflationStat">2.0%</span>
+                    </div>
+                    <div class="inflation-zone-indicator">
+                        <div class="zone zone-low" title="Too Low (<1%)">Low</div>
+                        <div class="zone zone-good active" id="inflationZone" title="Target (2-3%)">Good</div>
+                        <div class="zone zone-high" title="Too High (>4%)">High</div>
+                    </div>
                 </div>
-                <div class="stat-box capacity-box">
-                    <div class="stat-label">Capacity Used</div>
-                    <div class="stat-value good" id="capacityStat">85%</div>
-                </div>
-                <div class="stat-box tax-box">
-                    <div class="stat-label">Tax Rate</div>
-                    <div class="stat-value" id="taxRateStat">20%</div>
-                </div>
-                <div class="stat-box policy-box">
-                    <div class="stat-label">Policy Rate</div>
-                    <div class="stat-value" id="policyRateStat">2.0%</div>
-                </div>
-                <div class="stat-box services-box">
-                    <div class="stat-label">Services</div>
-                    <div class="stat-value" id="servicesStat">50</div>
-                </div>
-                <div class="stat-box spending-box">
-                    <div class="stat-label">Pub Spend</div>
-                    <div class="stat-value" id="pubSpend">$40B</div>
-                </div>
-                <div class="stat-box credit-box">
-                    <div class="stat-label">Pvt Credit</div>
-                    <div class="stat-value" id="pvtCredit">$50B</div>
-                </div>
-                <div class="stat-box demand-box">
-                    <div class="stat-label">Agg Demand</div>
-                    <div class="stat-value" id="aggDemand">$69B</div>
+                <div class="primary-stat services-stat">
+                    <div class="primary-stat-header">
+                        <span class="primary-stat-label">Services Score</span>
+                        <span class="primary-stat-value" id="servicesStat">50</span>
+                    </div>
+                    <div class="services-indicator">
+                        <div class="services-bar" id="servicesBar" style="width: 50%"></div>
+                    </div>
                 </div>
             </div>
+
+            <!-- SECONDARY METRICS - Collapsible -->
+            <div class="advanced-stats-accordion">
+                <button class="accordion-toggle" id="advancedStatsToggle" onclick="toggleAdvancedStats()">
+                    <span>Advanced Stats</span>
+                    <span class="accordion-icon" id="accordionIcon">&#9660;</span>
+                </button>
+                <div class="accordion-content" id="advancedStatsContent">
+                    <div class="stats-grid">
+                        <div class="stat-box capacity-box">
+                            <div class="stat-label">Capacity Used</div>
+                            <div class="stat-value" id="capacityStat">85%</div>
+                        </div>
+                        <div class="stat-box tax-box">
+                            <div class="stat-label">Tax Rate</div>
+                            <div class="stat-value" id="taxRateStat">20%</div>
+                        </div>
+                        <div class="stat-box policy-box">
+                            <div class="stat-label">Policy Rate</div>
+                            <div class="stat-value" id="policyRateStat">2.0%</div>
+                        </div>
+                        <div class="stat-box spending-box">
+                            <div class="stat-label">Pub Spend</div>
+                            <div class="stat-value" id="pubSpend">$40B</div>
+                        </div>
+                        <div class="stat-box credit-box">
+                            <div class="stat-label">Pvt Credit</div>
+                            <div class="stat-value" id="pvtCredit">$50B</div>
+                        </div>
+                        <div class="stat-box demand-box">
+                            <div class="stat-label">Agg Demand</div>
+                            <div class="stat-value" id="aggDemand">$69B</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floating Feedback Container -->
+            <div class="floating-feedback-container" id="floatingFeedbackContainer"></div>
 
             <div class="action-controls">
                 <div class="actions-badge" id="actionsDisplay">3 actions left</div>
@@ -125,6 +162,30 @@
             <!-- Economic Narrative integrated into game UI -->
             <div class="economic-narrative-panel" id="economicNarrative">
                 <strong>Day 1:</strong> Welcome to Keystroke Kingdom! You control a sovereign currency. Use MMT principles to achieve full employment and price stability.
+            </div>
+
+            <!-- Recommended Actions Panel -->
+            <div class="recommended-actions-panel" id="recommendedActionsPanel">
+                <div class="recommended-header">
+                    <span class="recommended-icon">&#128161;</span>
+                    <span class="recommended-title">Suggested Actions</span>
+                </div>
+                <div class="recommended-list" id="recommendedActionsList">
+                    <button class="recommended-action" onclick="publicSpending('education', 10)" data-action="education">
+                        <div class="recommended-action-content">
+                            <span class="recommended-action-name">Fund Education</span>
+                            <span class="recommended-action-preview">+2% employment, +0.3% inflation</span>
+                        </div>
+                        <span class="recommended-arrow">&#8594;</span>
+                    </button>
+                    <button class="recommended-action" onclick="toggleJobGuarantee()" data-action="jg">
+                        <div class="recommended-action-content">
+                            <span class="recommended-action-name">Enable Job Guarantee</span>
+                            <span class="recommended-action-preview">Absorbs unemployment, stabilizes prices</span>
+                        </div>
+                        <span class="recommended-arrow">&#8594;</span>
+                    </button>
+                </div>
             </div>
 
             <div class="capacity-indicators-wrapper">

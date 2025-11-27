@@ -8,7 +8,17 @@
 
 // Import all modules
 import { gameState, loadState } from './gameState.js';
-import { updateDisplay } from './ui.js';
+import {
+    updateDisplay,
+    toggleAdvancedStats,
+    showFloatingFeedback,
+    pulseElement,
+    animateValue,
+    updateRecommendedActions,
+    updateEmploymentBar,
+    updateInflationZone,
+    updateServicesBar
+} from './ui.js';
 import {
     nextTurn,
     publicSpending,
@@ -55,6 +65,14 @@ async function init() {
 
     updateDisplay();
     selectLocation('treasury');
+
+    // Initialize primary stats UI
+    updateEmploymentBar();
+    updateInflationZone();
+    updateServicesBar();
+
+    // Initialize recommended actions
+    updateRecommendedActions();
 
     // Set up onclick handlers using function assignment (CSP-friendly)
     setupEventHandlers();
@@ -131,6 +149,13 @@ window.askQuickAdvisorQuestion = askQuickAdvisorQuestion;
 // Scoring functions
 window.showHighScores = showHighScores;
 window.closeHighScores = closeHighScores;
+
+// UI functions for new stats panel
+window.toggleAdvancedStats = toggleAdvancedStats;
+window.showFloatingFeedback = showFloatingFeedback;
+window.pulseElement = pulseElement;
+window.animateValue = animateValue;
+window.updateRecommendedActions = updateRecommendedActions;
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', init);

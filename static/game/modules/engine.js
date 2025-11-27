@@ -5,7 +5,7 @@
 
 import { gameState, useAction, invalidateCache, getTotalCapacity, getAggregateDemand } from './gameState.js';
 import { GAME_CONSTANTS } from './config.js';
-import { updateDisplay, showEconomicNarrative } from './ui.js';
+import { updateDisplay, showEconomicNarrative, showFloatingFeedback, pulseElement, updateRecommendedActions } from './ui.js';
 import { checkForEvents } from './events.js';
 import { saveGameToServer } from './api.js';
 import { endGame } from './scoring.js';
@@ -29,6 +29,9 @@ export function nextTurn() {
     } else {
         updateDisplay();
         showEconomicNarrative();
+
+        // Update recommended actions based on new state
+        updateRecommendedActions();
 
         // Check for economic events
         checkForEvents();
@@ -129,8 +132,20 @@ export function publicSpending(sector, amount) {
         gameState.servicesScore += sectorBonuses[sector];
     }
 
+    // Show visual feedback
+    const feedbackType = amount > 0 ? 'positive' : 'negative';
+    const feedbackText = amount > 0 ? `+$${amount}B` : `-$${Math.abs(amount)}B`;
+    showFloatingFeedback(feedbackText, feedbackType);
+
+    // Pulse affected stats
+    pulseElement('pubSpend');
+    if (sectorBonuses[sector]) {
+        pulseElement('servicesStat');
+    }
+
     invalidateCache();
     updateDisplay();
+    updateRecommendedActions();
     saveGameToServer();
 }
 
@@ -146,8 +161,13 @@ export function investInCapacity(type) {
     gameState.publicSpending += 3;
     gameState.currencyIssued += 3;
 
+    // Show visual feedback
+    showFloatingFeedback(`+${investAmount} ${type}`, 'positive');
+    pulseElement(`${type}Bar`);
+
     invalidateCache();
     updateDisplay();
+    updateRecommendedActions();
     saveGameToServer();
 }
 
@@ -170,8 +190,16 @@ export function toggleJobGuarantee() {
     if (!useAction()) return;
 
     gameState.jgEnabled = !gameState.jgEnabled;
+
+    // Show visual feedback
+    const status = gameState.jgEnabled ? 'ON' : 'OFF';
+    showFloatingFeedback(`Job Guarantee: ${status}`, gameState.jgEnabled ? 'positive' : 'neutral');
+    pulseElement('jgIndicator');
+    pulseElement('employmentStat');
+
     invalidateCache();
     updateDisplay();
+    updateRecommendedActions();
     saveGameToServer();
 }
 
@@ -187,8 +215,14 @@ export function adjustTax(amount) {
     const totalTaxes = gameState.publicSpending * (gameState.taxRate / 100);
     gameState.taxesDeleted = totalTaxes;
 
+    // Show visual feedback
+    const feedbackText = amount > 0 ? `+${amount}% tax` : `${amount}% tax`;
+    showFloatingFeedback(feedbackText, amount > 0 ? 'neutral' : 'positive');
+    pulseElement('taxRateStat');
+
     invalidateCache();
     updateDisplay();
+    updateRecommendedActions();
     saveGameToServer();
 }
 
@@ -201,8 +235,14 @@ export function adjustPolicyRate(amount) {
         Math.min(GAME_CONSTANTS.MAX_POLICY_RATE, gameState.policyRate + amount)
     );
 
+    // Show visual feedback
+    const feedbackText = amount > 0 ? `+${amount}% rate` : `${amount}% rate`;
+    showFloatingFeedback(feedbackText, 'neutral');
+    pulseElement('policyRateStat');
+
     invalidateCache();
     updateDisplay();
+    updateRecommendedActions();
     saveGameToServer();
 }
 
