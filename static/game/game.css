@@ -596,18 +596,20 @@
             -webkit-backdrop-filter: blur(20px) saturate(180%);
             border-bottom: 3px solid var(--color-primary, #012169);
             padding: var(--space-2, 8px);
-            padding-bottom: 60px;
+            padding-bottom: 0;
             display: flex;
             flex-direction: column;
             max-height: 42vh;
+            overflow: hidden;
+        }
+
+        /* Content wrapper - scrollable area */
+        .upper-panel-content {
+            flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
-        }
-
-        /* Content wrapper is no longer needed - remove flex properties */
-        .upper-panel-content {
-            display: contents;
+            padding-bottom: var(--space-2, 8px);
         }
 
         .header-compact {
@@ -743,10 +745,10 @@
             grid-template-columns: 1fr 1fr;
             gap: var(--space-2, 8px);
             align-items: stretch;
-            position: sticky;
-            bottom: 0;
+            flex-shrink: 0;
             padding: var(--space-2, 8px);
             margin: 0 calc(-1 * var(--space-2, 8px));
+            margin-bottom: calc(-1 * var(--space-2, 8px));
             background: rgba(255, 255, 255, 0.98);
             border-top: 1px solid var(--color-gray-200, #e5e7eb);
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
