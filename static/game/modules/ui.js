@@ -94,6 +94,163 @@ export function animateValue(elementId, start, end, duration = 500) {
 }
 
 // ============================================
+// MMT TEACHING MOMENTS
+// ============================================
+
+// MMT Insight definitions
+const mmtInsights = {
+    spending_creates_money: {
+        title: "Currency Creation",
+        message: "Notice: The government doesn't need to 'find' money before spending. By spending, it creates currency and credits private bank accounts. This is the power of currency sovereignty!",
+        badge: "Currency Creator"
+    },
+    taxes_delete_money: {
+        title: "Taxes Delete Money",
+        message: "When taxes are collected, money doesn't go into a 'government account' - it's actually deleted from circulation! Taxes free up real resources by reducing private spending power, not to 'fund' government.",
+        badge: "Tax Truthseer"
+    },
+    real_resource_constraint: {
+        title: "Real Resource Constraint",
+        message: "Inflation is rising! This isn't because you 'printed too much money' - it's because demand is exceeding your economy's real productive capacity. The constraint is resources, not money!",
+        badge: "Capacity Conscious"
+    },
+    jg_buffer_stock: {
+        title: "Buffer Stock Employment",
+        message: "The Job Guarantee creates a 'buffer stock' of employed workers. Like a commodity buffer stock, it expands in downturns and contracts in booms - an automatic stabilizer that ensures full employment!",
+        badge: "Buffer Stock Builder"
+    },
+    sectoral_balances: {
+        title: "Sectoral Balances Identity",
+        message: "The private sector can only save (run a surplus) if another sector runs a deficit. Government deficits = private surpluses! This is an accounting identity, not an opinion.",
+        badge: "Balance Master"
+    },
+    deficit_is_private_wealth: {
+        title: "Deficit Creates Private Wealth",
+        message: "When government runs a deficit, it adds net financial assets to the private sector. Government 'debt' is private sector wealth! This is the flip side of the balance sheet.",
+        badge: "Wealth Watcher"
+    },
+    capacity_investment: {
+        title: "Expanding the Frontier",
+        message: "By investing in capacity (energy, skills, logistics), you're expanding what the economy can produce. This raises the 'speed limit' - allowing more demand without inflation!",
+        badge: "Frontier Expander"
+    },
+    jg_price_anchor: {
+        title: "Price Anchor Effect",
+        message: "The Job Guarantee wage acts as a price anchor. Since JG workers are available at a fixed wage, private employers have a stable reference point, reducing wage-price spirals!",
+        badge: "Price Anchor"
+    }
+};
+
+// Show an MMT teaching moment
+export function showMMTInsight(insightKey, forceShow = false) {
+    if (!gameState.events.mmtInsightsShown) {
+        gameState.events.mmtInsightsShown = [];
+    }
+
+    // Check if already shown (unless forced)
+    if (!forceShow && gameState.events.mmtInsightsShown.includes(insightKey)) {
+        return false;
+    }
+
+    const insight = mmtInsights[insightKey];
+    if (!insight) return false;
+
+    // Mark as shown
+    gameState.events.mmtInsightsShown.push(insightKey);
+
+    // Award MMT score and badge
+    gameState.mmtScore += 10;
+    if (insight.badge && !gameState.mmtBadges.includes(insight.badge)) {
+        gameState.mmtBadges.push(insight.badge);
+    }
+
+    // Create and show the insight modal
+    showInsightModal(insight.title, insight.message, insight.badge);
+
+    return true;
+}
+
+// Display the insight modal
+function showInsightModal(title, message, badge) {
+    // Check if modal already exists
+    let modal = document.getElementById('mmtInsightModal');
+
+    if (!modal) {
+        // Create the modal
+        modal = document.createElement('div');
+        modal.id = 'mmtInsightModal';
+        modal.className = 'mmt-insight-modal';
+        modal.innerHTML = `
+            <div class="mmt-insight-content">
+                <div class="mmt-insight-header">
+                    <span class="mmt-insight-icon">💡</span>
+                    <h3 class="mmt-insight-title"></h3>
+                </div>
+                <p class="mmt-insight-message"></p>
+                <div class="mmt-insight-badge"></div>
+                <button class="mmt-insight-close" onclick="closeMMTInsight()">Got it!</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // Update content
+    modal.querySelector('.mmt-insight-title').textContent = title;
+    modal.querySelector('.mmt-insight-message').textContent = message;
+
+    const badgeEl = modal.querySelector('.mmt-insight-badge');
+    if (badge) {
+        badgeEl.innerHTML = `<span class="badge-earned">🏆 Badge Earned: ${badge}</span>`;
+        badgeEl.style.display = 'block';
+    } else {
+        badgeEl.style.display = 'none';
+    }
+
+    // Show modal with animation
+    modal.classList.add('active');
+}
+
+// Close the insight modal
+export function closeMMTInsight() {
+    const modal = document.getElementById('mmtInsightModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Make closeMMTInsight available globally for onclick
+if (typeof window !== 'undefined') {
+    window.closeMMTInsight = closeMMTInsight;
+}
+
+// ============================================
+// MMT SCORE TRACKING
+// ============================================
+
+// Award points for MMT-aligned decision
+export function awardMMTPoints(points, reason, isAligned = true) {
+    gameState.mmtScore += points;
+
+    if (isAligned) {
+        gameState.mmtDecisions.aligned++;
+    } else {
+        gameState.mmtDecisions.hawkish++;
+    }
+
+    // Show feedback
+    showFloatingFeedback(`+${points} MMT`, 'positive');
+}
+
+// Penalize for deficit hawk thinking
+export function penalizeHawkishThinking(points, reason) {
+    // Don't go negative
+    gameState.mmtScore = Math.max(0, gameState.mmtScore - points);
+    gameState.mmtDecisions.hawkish++;
+
+    showFloatingFeedback(`-${points} MMT`, 'negative');
+}
+
+// ============================================
 // ACCORDION TOGGLE
 // ============================================
 
@@ -262,6 +419,12 @@ export function updateDisplay(changedFields = null) {
         updatePolicyIndicators();
     }
 
+    // MMT metrics (always update for now as they depend on multiple fields)
+    if (updateAll || fields.has('publicSpending') || fields.has('taxesDeleted') || fields.has('deficit') ||
+        fields.has('currencyIssued') || fields.has('mmtScore') || fields.has('sectorialBalances')) {
+        updateMMTMetrics();
+    }
+
     // Clear changed fields after update
     clearChangedFields();
 }
@@ -302,6 +465,64 @@ export function updatePolicyIndicators() {
     if (iorIndicator) {
         iorIndicator.textContent = gameState.iorEnabled ? 'IOR: ON' : 'IOR: OFF';
         iorIndicator.className = gameState.iorEnabled ? 'indicator-btn active' : 'indicator-btn';
+    }
+}
+
+// Update MMT metrics display
+export function updateMMTMetrics() {
+    // Deficit display
+    const deficitStat = getElement('deficitStat');
+    if (deficitStat) {
+        const deficit = gameState.deficit || 0;
+        deficitStat.textContent = `${deficit >= 0 ? '+' : ''}$${deficit.toFixed(0)}B`;
+        deficitStat.className = deficit >= 0 ? 'stat-value mmt-value deficit-positive' : 'stat-value mmt-value deficit-negative';
+    }
+
+    // Currency issued
+    const currencyIssuedStat = getElement('currencyIssuedStat');
+    if (currencyIssuedStat) {
+        currencyIssuedStat.textContent = `$${(gameState.currencyIssued || 0).toFixed(0)}B`;
+    }
+
+    // Taxes deleted
+    const taxesDeletedStat = getElement('taxesDeletedStat');
+    if (taxesDeletedStat) {
+        taxesDeletedStat.textContent = `$${(gameState.taxesDeleted || 0).toFixed(0)}B`;
+    }
+
+    // Sectoral balances
+    if (gameState.sectorialBalances) {
+        const govBalanceStat = getElement('govBalanceStat');
+        if (govBalanceStat) {
+            const gov = gameState.sectorialBalances.government || 0;
+            govBalanceStat.textContent = `${gov >= 0 ? '+' : ''}$${gov.toFixed(0)}B`;
+            govBalanceStat.className = gov < 0 ? 'sectoral-value deficit' : 'sectoral-value surplus';
+        }
+
+        const pvtBalanceStat = getElement('pvtBalanceStat');
+        if (pvtBalanceStat) {
+            const pvt = gameState.sectorialBalances.private || 0;
+            pvtBalanceStat.textContent = `${pvt >= 0 ? '+' : ''}$${pvt.toFixed(0)}B`;
+            pvtBalanceStat.className = pvt >= 0 ? 'sectoral-value surplus' : 'sectoral-value deficit';
+        }
+
+        const extBalanceStat = getElement('extBalanceStat');
+        if (extBalanceStat) {
+            const ext = gameState.sectorialBalances.external || 0;
+            extBalanceStat.textContent = `${ext >= 0 ? '+' : ''}$${ext.toFixed(0)}B`;
+        }
+    }
+
+    // MMT Score
+    const mmtScoreStat = getElement('mmtScoreStat');
+    if (mmtScoreStat) {
+        mmtScoreStat.textContent = gameState.mmtScore || 0;
+    }
+
+    // MMT Badges
+    const mmtBadgesDisplay = getElement('mmtBadgesDisplay');
+    if (mmtBadgesDisplay && gameState.mmtBadges && gameState.mmtBadges.length > 0) {
+        mmtBadgesDisplay.innerHTML = gameState.mmtBadges.map(badge => `<span class="badge-icon" title="${badge}">&#127942;</span>`).join('');
     }
 }
 
