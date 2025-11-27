@@ -20,6 +20,146 @@ export function clearElementCache() {
     elementCache.clear();
 }
 
+// ============================================
+// VISUAL FEEDBACK SYSTEM
+// ============================================
+
+// Show floating feedback indicator (e.g., "+$10B")
+export function showFloatingFeedback(text, type = 'neutral') {
+    const container = getElement('floatingFeedbackContainer');
+    if (!container) return;
+
+    const feedback = document.createElement('div');
+    feedback.className = `floating-feedback ${type}`;
+    feedback.textContent = text;
+
+    // Random horizontal offset for variety
+    const offsetX = (Math.random() - 0.5) * 60;
+    feedback.style.left = `${offsetX}px`;
+
+    container.appendChild(feedback);
+
+    // Remove after animation completes
+    setTimeout(() => {
+        feedback.remove();
+    }, 1500);
+}
+
+// Pulse a stat element to draw attention
+export function pulseElement(elementId) {
+    const element = getElement(elementId);
+    if (!element) return;
+
+    element.classList.remove('pulse');
+    // Force reflow to restart animation
+    void element.offsetWidth;
+    element.classList.add('pulse');
+
+    setTimeout(() => {
+        element.classList.remove('pulse');
+    }, 500);
+}
+
+// Animate a numeric value change
+export function animateValue(elementId, start, end, duration = 500) {
+    const element = getElement(elementId);
+    if (!element) return;
+
+    const startTime = performance.now();
+    const change = end - start;
+
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Easing function (ease-out)
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const current = start + change * easeOut;
+
+        // Format based on element type
+        if (elementId.includes('Stat') && elementId !== 'servicesStat') {
+            element.textContent = `${current.toFixed(current < 10 ? 1 : 0)}%`;
+        } else if (elementId.includes('Spend') || elementId.includes('Credit') || elementId.includes('Demand')) {
+            element.textContent = `$${current.toFixed(0)}B`;
+        } else {
+            element.textContent = current.toFixed(0);
+        }
+
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        }
+    }
+
+    requestAnimationFrame(update);
+}
+
+// ============================================
+// ACCORDION TOGGLE
+// ============================================
+
+export function toggleAdvancedStats() {
+    const toggle = getElement('advancedStatsToggle');
+    const content = getElement('advancedStatsContent');
+
+    if (!toggle || !content) return;
+
+    const isExpanded = content.classList.contains('expanded');
+
+    if (isExpanded) {
+        content.classList.remove('expanded');
+        toggle.classList.remove('expanded');
+    } else {
+        content.classList.add('expanded');
+        toggle.classList.add('expanded');
+    }
+}
+
+// ============================================
+// PRIMARY STATS UPDATES
+// ============================================
+
+// Update employment progress bar
+export function updateEmploymentBar() {
+    const bar = getElement('employmentBar');
+    if (!bar) return;
+
+    const percentage = Math.min(100, Math.max(0, gameState.employment));
+    bar.style.width = `${percentage}%`;
+}
+
+// Update inflation zone indicator
+export function updateInflationZone() {
+    const zones = document.querySelectorAll('.zone');
+    if (!zones.length) return;
+
+    zones.forEach(zone => zone.classList.remove('active'));
+
+    const inflation = gameState.inflation;
+    let activeZone;
+
+    if (inflation < 1.5) {
+        activeZone = document.querySelector('.zone-low');
+    } else if (inflation >= 1.5 && inflation <= 4) {
+        activeZone = document.querySelector('.zone-good');
+    } else {
+        activeZone = document.querySelector('.zone-high');
+    }
+
+    if (activeZone) {
+        activeZone.classList.add('active');
+    }
+}
+
+// Update services score bar
+export function updateServicesBar() {
+    const bar = getElement('servicesBar');
+    if (!bar) return;
+
+    // Scale services score to percentage (assuming max around 100 for a good game)
+    const percentage = Math.min(100, (gameState.servicesScore / 100) * 100);
+    bar.style.width = `${percentage}%`;
+}
+
 // Update display with optional selective updates
 export function updateDisplay(changedFields = null) {
     const fields = changedFields || getChangedFields();
@@ -35,20 +175,22 @@ export function updateDisplay(changedFields = null) {
         if (actionsDisplay) actionsDisplay.textContent = `${gameState.actionsRemaining} actions left`;
     }
 
-    // Main stats
+    // Main stats - Primary metrics
     if (updateAll || fields.has('employment')) {
         const employmentStat = getElement('employmentStat');
         if (employmentStat) {
             employmentStat.textContent = `${gameState.employment.toFixed(0)}%`;
             // Update class based on value
             if (gameState.employment >= 95) {
-                employmentStat.className = 'stat-value good';
+                employmentStat.className = 'primary-stat-value good';
             } else if (gameState.employment >= 85) {
-                employmentStat.className = 'stat-value warning';
+                employmentStat.className = 'primary-stat-value warning';
             } else {
-                employmentStat.className = 'stat-value bad';
+                employmentStat.className = 'primary-stat-value bad';
             }
         }
+        // Update employment progress bar
+        updateEmploymentBar();
     }
 
     if (updateAll || fields.has('inflation')) {
@@ -57,13 +199,15 @@ export function updateDisplay(changedFields = null) {
             inflationStat.textContent = `${gameState.inflation.toFixed(1)}%`;
             // Update class based on value
             if (gameState.inflation >= 2 && gameState.inflation <= 3) {
-                inflationStat.className = 'stat-value good';
+                inflationStat.className = 'primary-stat-value good';
             } else if (gameState.inflation >= 1 && gameState.inflation <= 4) {
-                inflationStat.className = 'stat-value warning';
+                inflationStat.className = 'primary-stat-value warning';
             } else {
-                inflationStat.className = 'stat-value bad';
+                inflationStat.className = 'primary-stat-value bad';
             }
         }
+        // Update inflation zone indicator
+        updateInflationZone();
     }
 
     if (updateAll || fields.has('capacityUsed')) {
@@ -74,6 +218,8 @@ export function updateDisplay(changedFields = null) {
     if (updateAll || fields.has('servicesScore')) {
         const servicesStat = getElement('servicesStat');
         if (servicesStat) servicesStat.textContent = gameState.servicesScore.toFixed(0);
+        // Update services progress bar
+        updateServicesBar();
     }
 
     if (updateAll || fields.has('taxRate')) {
@@ -214,4 +360,144 @@ export function generateEconomicNarrative() {
     }
 
     return intro;
+}
+
+// ============================================
+// RECOMMENDED ACTIONS SYSTEM
+// ============================================
+
+// Generate recommended actions based on current game state
+export function updateRecommendedActions() {
+    const container = getElement('recommendedActionsList');
+    if (!container) return;
+
+    const recommendations = generateRecommendations();
+
+    // Clear existing recommendations
+    container.innerHTML = '';
+
+    // Add new recommendations
+    recommendations.forEach(rec => {
+        const button = document.createElement('button');
+        button.className = 'recommended-action';
+        button.setAttribute('data-action', rec.action);
+        button.onclick = rec.handler;
+
+        button.innerHTML = `
+            <div class="recommended-action-content">
+                <span class="recommended-action-name">${rec.name}</span>
+                <span class="recommended-action-preview">${rec.preview}</span>
+            </div>
+            <span class="recommended-arrow">&#8594;</span>
+        `;
+
+        container.appendChild(button);
+    });
+}
+
+// Generate contextual recommendations based on game state
+function generateRecommendations() {
+    const recommendations = [];
+    const totalCapacity = getTotalCapacity();
+    const aggDemand = getAggregateDemand();
+    const demandGap = aggDemand - totalCapacity;
+    const unemploymentRate = 100 - gameState.employment;
+
+    // High unemployment, low inflation - expand demand
+    if (unemploymentRate > 10 && gameState.inflation < 3) {
+        if (!gameState.jgEnabled) {
+            recommendations.push({
+                name: 'Enable Job Guarantee',
+                preview: 'Absorbs ~60% unemployment, stabilizes wages',
+                action: 'jg',
+                handler: () => window.toggleJobGuarantee && window.toggleJobGuarantee()
+            });
+        }
+        recommendations.push({
+            name: 'Fund Education',
+            preview: `+~3% employment, +~0.4% inflation`,
+            action: 'education',
+            handler: () => window.publicSpending && window.publicSpending('education', 10)
+        });
+    }
+
+    // High inflation - cool demand
+    if (gameState.inflation > 4) {
+        if (gameState.taxRate < 35) {
+            recommendations.push({
+                name: 'Raise Taxes',
+                preview: 'Reduces demand, cools inflation',
+                action: 'tax-up',
+                handler: () => window.adjustTax && window.adjustTax(5)
+            });
+        }
+        if (gameState.policyRate < 5) {
+            recommendations.push({
+                name: 'Raise Policy Rate',
+                preview: 'Slows credit growth, reduces inflation',
+                action: 'rate-up',
+                handler: () => window.adjustPolicyRate && window.adjustPolicyRate(0.5)
+            });
+        }
+    }
+
+    // Near full capacity but can expand
+    if (gameState.capacityUsed > 85 && gameState.inflation > 3) {
+        const lowestCapacity = Math.min(
+            gameState.capacity.energy,
+            gameState.capacity.skills,
+            gameState.capacity.logistics
+        );
+        let capacityType = 'energy';
+        if (gameState.capacity.skills === lowestCapacity) capacityType = 'skills';
+        if (gameState.capacity.logistics === lowestCapacity) capacityType = 'logistics';
+
+        recommendations.push({
+            name: `Invest in ${capacityType.charAt(0).toUpperCase() + capacityType.slice(1)}`,
+            preview: 'Expand productive capacity, reduce bottlenecks',
+            action: `invest-${capacityType}`,
+            handler: () => window.investInCapacity && window.investInCapacity(capacityType)
+        });
+    }
+
+    // Demand well below capacity
+    if (demandGap < -10 && gameState.inflation < 2) {
+        recommendations.push({
+            name: 'Fiscal Stimulus',
+            preview: '+$20B demand boost, +~4% employment',
+            action: 'stimulus',
+            handler: () => window.publicSpending && window.publicSpending('stimulus', 20)
+        });
+    }
+
+    // Employment close to target but not there yet
+    if (gameState.employment >= 85 && gameState.employment < 95 && gameState.inflation < 3.5) {
+        recommendations.push({
+            name: 'Fund Healthcare',
+            preview: '+2 services, +~2% employment',
+            action: 'healthcare',
+            handler: () => window.publicSpending && window.publicSpending('healthcare', 10)
+        });
+    }
+
+    // Default suggestions if no specific conditions
+    if (recommendations.length === 0) {
+        if (gameState.servicesScore < 60) {
+            recommendations.push({
+                name: 'Fund Infrastructure',
+                preview: '+1.5 services, boosts long-term capacity',
+                action: 'infrastructure',
+                handler: () => window.publicSpending && window.publicSpending('infrastructure', 10)
+            });
+        }
+        recommendations.push({
+            name: 'Continue Current Policy',
+            preview: 'Economy on stable trajectory',
+            action: 'next',
+            handler: () => window.nextTurn && window.nextTurn()
+        });
+    }
+
+    // Return top 2-3 recommendations
+    return recommendations.slice(0, 3);
 }
