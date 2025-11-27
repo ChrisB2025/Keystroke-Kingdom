@@ -196,3 +196,24 @@ if not DEBUG:
     # Allow JavaScript in production
     # Note: We're not setting CSP headers, letting app handle JS normally
     pass
+
+
+# Cache Configuration
+# Default: Local memory cache (sufficient for single-server deployments)
+# For production with multiple servers, consider Redis:
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+#         'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379'),
+#     }
+# }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'keystroke-kingdom-cache',
+        'TIMEOUT': 300,  # 5 minutes default timeout
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
+    }
+}
