@@ -3,9 +3,9 @@
  * Keystroke Kingdom v6.0
  */
 
-import { gameState, useAction, invalidateCache, getTotalCapacity, getAggregateDemand } from './gameState.js';
+import { gameState, useAction, invalidateCache, getTotalCapacity, getAggregateDemand, updateSectoralBalances } from './gameState.js';
 import { GAME_CONSTANTS } from './config.js';
-import { updateDisplay, showEconomicNarrative, showFloatingFeedback, pulseElement, updateRecommendedActions } from './ui.js';
+import { updateDisplay, showEconomicNarrative, showFloatingFeedback, pulseElement, updateRecommendedActions, showMMTInsight, awardMMTPoints, penalizeHawkishThinking } from './ui.js';
 import { checkForEvents } from './events.js';
 import { saveGameToServer } from './api.js';
 import { endGame } from './scoring.js';
@@ -52,18 +52,26 @@ export function evolveEconomy() {
     const taxMultiplier = 1 - (gameState.taxRate / 100) * 0.7;
     gameState.privateCredit *= (0.98 + taxMultiplier * 0.02);
 
+    // Calculate taxes deleted based on current spending and tax rate
+    const totalTaxes = gameState.publicSpending * (gameState.taxRate / 100);
+    gameState.taxesDeleted = totalTaxes;
+
     // Job Guarantee effects
     if (gameState.jgEnabled) {
         const unemploymentRate = 100 - gameState.employment;
         gameState.jgPoolSize = unemploymentRate * GAME_CONSTANTS.JG_ABSORPTION_RATE;
         const jgSpending = gameState.jgPoolSize * gameState.jgWage * 0.01;
         gameState.publicSpending += jgSpending * 0.1;
+        gameState.currencyIssued += jgSpending * 0.1;
     }
 
     // Random capacity fluctuations
     gameState.capacity.energy += Math.random() * 0.3 - 0.1;
     gameState.capacity.skills += Math.random() * 0.3 - 0.1;
     gameState.capacity.logistics += Math.random() * 0.3 - 0.1;
+
+    // Update sectoral balances at end of turn
+    updateSectoralBalances();
 }
 
 // Calculate inflation based on demand vs capacity
@@ -116,6 +124,33 @@ export function publicSpending(sector, amount) {
     gameState.publicSpending += amount;
     gameState.currencyIssued += amount;
 
+    // Update sectoral balances after spending change
+    updateSectoralBalances();
+
+    // MMT Teaching Moment: Show insight on first few spending actions
+    if (gameState.currentDay <= 10) {
+        showMMTInsight('spending_creates_money');
+    }
+
+    // Award MMT points for using fiscal policy appropriately
+    const demandGap = getAggregateDemand() - getTotalCapacity();
+    if (amount > 0 && demandGap < 0) {
+        // Spending when there's slack - MMT-aligned!
+        awardMMTPoints(5, 'Fiscal expansion with spare capacity');
+    } else if (amount > 0 && demandGap > 20 && gameState.inflation > 4) {
+        // Spending when already overheating - risky but educational
+        setTimeout(() => {
+            showMMTInsight('real_resource_constraint');
+        }, 500);
+    }
+
+    // Track deficit for MMT insight
+    if (gameState.deficit > 20 && !gameState.events.mmtInsightsShown.includes('deficit_is_private_wealth')) {
+        setTimeout(() => {
+            showMMTInsight('deficit_is_private_wealth');
+        }, 1000);
+    }
+
     // Sector-specific services bonuses
     const sectorBonuses = {
         healthcare: 2,
@@ -161,6 +196,15 @@ export function investInCapacity(type) {
     gameState.publicSpending += 3;
     gameState.currencyIssued += 3;
 
+    // Update sectoral balances
+    updateSectoralBalances();
+
+    // MMT Teaching Moment: Show insight about expanding productive capacity
+    if (gameState.capacityUsed > 85 || gameState.inflation > 3) {
+        showMMTInsight('capacity_investment');
+        awardMMTPoints(10, 'Expanding productive capacity');
+    }
+
     // Show visual feedback
     showFloatingFeedback(`+${investAmount} ${type}`, 'positive');
     pulseElement(`${type}Bar`);
@@ -191,6 +235,22 @@ export function toggleJobGuarantee() {
 
     gameState.jgEnabled = !gameState.jgEnabled;
 
+    // MMT Teaching Moments for Job Guarantee
+    if (gameState.jgEnabled) {
+        const unemploymentRate = 100 - gameState.employment;
+
+        // Show buffer stock insight
+        showMMTInsight('jg_buffer_stock');
+        awardMMTPoints(15, 'Enabled Job Guarantee');
+
+        // If enabling JG with significant unemployment, extra insight
+        if (unemploymentRate > 10) {
+            setTimeout(() => {
+                showMMTInsight('jg_price_anchor');
+            }, 2000);
+        }
+    }
+
     // Show visual feedback
     const status = gameState.jgEnabled ? 'ON' : 'OFF';
     showFloatingFeedback(`Job Guarantee: ${status}`, gameState.jgEnabled ? 'positive' : 'neutral');
@@ -207,6 +267,7 @@ export function toggleJobGuarantee() {
 export function adjustTax(amount) {
     if (!useAction()) return;
 
+    const oldTaxRate = gameState.taxRate;
     gameState.taxRate = Math.max(
         GAME_CONSTANTS.MIN_TAX_RATE,
         Math.min(GAME_CONSTANTS.MAX_TAX_RATE, gameState.taxRate + amount)
@@ -214,6 +275,35 @@ export function adjustTax(amount) {
 
     const totalTaxes = gameState.publicSpending * (gameState.taxRate / 100);
     gameState.taxesDeleted = totalTaxes;
+
+    // Update sectoral balances
+    updateSectoralBalances();
+
+    // MMT Teaching Moment: Taxes delete money
+    if (gameState.currentDay <= 15) {
+        showMMTInsight('taxes_delete_money');
+    }
+
+    // MMT scoring based on context
+    const demandGap = getAggregateDemand() - getTotalCapacity();
+
+    if (amount > 0 && demandGap > 15 && gameState.inflation > 4) {
+        // Raising taxes when overheating - MMT-aligned!
+        awardMMTPoints(10, 'Cooling overheated economy with taxes');
+    } else if (amount > 0 && demandGap < -10 && gameState.employment < 90) {
+        // Raising taxes during slack - "deficit hawk" thinking
+        penalizeHawkishThinking(5, 'Contractionary policy during recession');
+    } else if (amount < 0 && demandGap < 0) {
+        // Cutting taxes when there's slack - reasonable
+        awardMMTPoints(5, 'Stimulative tax cut with spare capacity');
+    }
+
+    // Sectoral balances insight if running a surplus
+    if (gameState.deficit < 0) {
+        setTimeout(() => {
+            showMMTInsight('sectoral_balances');
+        }, 500);
+    }
 
     // Show visual feedback
     const feedbackText = amount > 0 ? `+${amount}% tax` : `${amount}% tax`;

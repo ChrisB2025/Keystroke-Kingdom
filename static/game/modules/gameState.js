@@ -50,6 +50,22 @@ export function createInitialState() {
         currencyIssued: 0,
         taxesDeleted: 0,
 
+        // MMT Metrics - Deficit and Sectoral Balances
+        deficit: 0,  // Government deficit (positive) or surplus (negative)
+        sectorialBalances: {
+            government: -40,  // Government deficit = private surplus source
+            private: 40,      // Private sector net financial assets
+            external: 0       // External sector (trade balance)
+        },
+
+        // MMT Score Gamification
+        mmtScore: 0,
+        mmtBadges: [],  // Badges earned for MMT insights
+        mmtDecisions: {  // Track MMT-aligned vs deficit-hawk decisions
+            aligned: 0,
+            hawkish: 0
+        },
+
         finalScore: 0,
         gameOver: false,
 
@@ -112,6 +128,33 @@ export function getDemandGap() {
 
 export function getUnemploymentRate() {
     return 100 - gameState.employment;
+}
+
+// Calculate deficit (government spending - taxes)
+export function getDeficit() {
+    return gameState.publicSpending - gameState.taxesDeleted;
+}
+
+// Update sectoral balances based on current state
+export function updateSectoralBalances() {
+    // Government sector balance (deficit positive, surplus negative)
+    const govBalance = -(gameState.publicSpending - gameState.taxesDeleted);
+
+    // External sector (from net exports - negative exports = foreign surplus)
+    const extBalance = -gameState.netExports;
+
+    // Private sector balance must equal government + external (sectoral balance identity)
+    // Private surplus = Government deficit + External deficit
+    const pvtBalance = -govBalance + extBalance;
+
+    gameState.sectorialBalances = {
+        government: govBalance,
+        private: pvtBalance,
+        external: extBalance
+    };
+
+    // Update deficit tracking
+    gameState.deficit = -govBalance;  // Deficit is positive when government runs deficit
 }
 
 // State update helpers

@@ -145,6 +145,47 @@
                             <div class="stat-value" id="aggDemand">$69B</div>
                         </div>
                     </div>
+
+                    <!-- MMT Metrics Section -->
+                    <div class="mmt-metrics-section">
+                        <div class="mmt-section-header">MMT Insights</div>
+                        <div class="stats-grid mmt-stats-grid">
+                            <div class="stat-box mmt-deficit-box">
+                                <div class="stat-label">Deficit</div>
+                                <div class="stat-value mmt-value" id="deficitStat">$0B</div>
+                            </div>
+                            <div class="stat-box mmt-issued-box">
+                                <div class="stat-label">Currency Issued</div>
+                                <div class="stat-value mmt-value" id="currencyIssuedStat">$0B</div>
+                            </div>
+                            <div class="stat-box mmt-deleted-box">
+                                <div class="stat-label">Taxes Deleted</div>
+                                <div class="stat-value mmt-value" id="taxesDeletedStat">$0B</div>
+                            </div>
+                        </div>
+                        <div class="sectoral-balances">
+                            <div class="sectoral-title">Sectoral Balances (must sum to zero)</div>
+                            <div class="sectoral-grid">
+                                <div class="sectoral-item gov-sector">
+                                    <span class="sectoral-label">Gov't</span>
+                                    <span class="sectoral-value" id="govBalanceStat">-$40B</span>
+                                </div>
+                                <div class="sectoral-item pvt-sector">
+                                    <span class="sectoral-label">Private</span>
+                                    <span class="sectoral-value" id="pvtBalanceStat">+$40B</span>
+                                </div>
+                                <div class="sectoral-item ext-sector">
+                                    <span class="sectoral-label">External</span>
+                                    <span class="sectoral-value" id="extBalanceStat">$0B</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mmt-score-display">
+                            <span class="mmt-score-label">MMT Score:</span>
+                            <span class="mmt-score-value" id="mmtScoreStat">0</span>
+                            <span class="mmt-badges" id="mmtBadgesDisplay"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -471,6 +512,10 @@
                     <button class="quick-prompt-btn" onclick="askQuickAdvisorQuestion('next')">What's Next?</button>
                     <button class="quick-prompt-btn" onclick="askQuickAdvisorQuestion('mmt')">Explain MMT</button>
                     <button class="quick-prompt-btn" onclick="askQuickAdvisorQuestion('inflation')">Inflation Risk?</button>
+                    <button class="quick-prompt-btn" onclick="askQuickAdvisorQuestion('deficit')">Deficit Concern?</button>
+                    <button class="quick-prompt-btn" onclick="askQuickAdvisorQuestion('taxes')">Purpose of Taxes?</button>
+                    <button class="quick-prompt-btn" onclick="askQuickAdvisorQuestion('score')">My MMT Score?</button>
+                    <button class="quick-prompt-btn" onclick="askQuickAdvisorQuestion('quiz')">Quiz Me!</button>
                 </div>
             </div>
 

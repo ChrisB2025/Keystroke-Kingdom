@@ -1917,3 +1917,326 @@
                 min-height: 48px;
             }
         }
+
+        /* ============================================
+           MMT INSIGHT MODAL
+           ============================================ */
+        .mmt-insight-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            padding: 16px;
+        }
+
+        .mmt-insight-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .mmt-insight-content {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            color: white;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            animation: insightSlideIn 0.4s ease;
+        }
+
+        @keyframes insightSlideIn {
+            from {
+                transform: translateY(-20px) scale(0.95);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .mmt-insight-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .mmt-insight-icon {
+            font-size: 32px;
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6)); }
+            50% { filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.9)); }
+        }
+
+        .mmt-insight-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+            color: #fbbf24;
+        }
+
+        .mmt-insight-message {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 16px;
+            opacity: 0.95;
+        }
+
+        .mmt-insight-badge {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .badge-earned {
+            color: #fbbf24;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .mmt-insight-close {
+            width: 100%;
+            padding: 12px 24px;
+            background: #fbbf24;
+            color: #1e3a8a;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .mmt-insight-close:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+        }
+
+        .mmt-insight-close:active {
+            transform: scale(0.98);
+        }
+
+        /* ============================================
+           MMT METRICS SECTION IN ADVANCED STATS
+           ============================================ */
+        .mmt-metrics-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .mmt-section-header {
+            font-size: 11px;
+            font-weight: 600;
+            color: #1e3a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .mmt-stats-grid {
+            margin-bottom: 8px;
+        }
+
+        .mmt-value {
+            color: #1e3a8a !important;
+        }
+
+        .mmt-deficit-box {
+            border-left: 3px solid #3b82f6;
+        }
+
+        .mmt-issued-box {
+            border-left: 3px solid #10b981;
+        }
+
+        .mmt-deleted-box {
+            border-left: 3px solid #ef4444;
+        }
+
+        .deficit-positive {
+            color: #10b981 !important;
+        }
+
+        .deficit-negative {
+            color: #ef4444 !important;
+        }
+
+        /* Sectoral Balances Display */
+        .sectoral-balances {
+            background: #f8fafc;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+
+        .sectoral-title {
+            font-size: 10px;
+            color: #64748b;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+
+        .sectoral-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+        }
+
+        .sectoral-item {
+            text-align: center;
+            padding: 4px;
+            border-radius: 4px;
+            background: white;
+        }
+
+        .sectoral-label {
+            font-size: 9px;
+            color: #64748b;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .sectoral-value {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .sectoral-value.surplus {
+            color: #10b981;
+        }
+
+        .sectoral-value.deficit {
+            color: #ef4444;
+        }
+
+        .gov-sector {
+            border-bottom: 2px solid #3b82f6;
+        }
+
+        .pvt-sector {
+            border-bottom: 2px solid #10b981;
+        }
+
+        .ext-sector {
+            border-bottom: 2px solid #8b5cf6;
+        }
+
+        /* MMT Score Display */
+        .mmt-score-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: white;
+        }
+
+        .mmt-score-label {
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
+        .mmt-score-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fbbf24;
+        }
+
+        .mmt-badges {
+            display: flex;
+            gap: 2px;
+        }
+
+        .badge-icon {
+            font-size: 14px;
+            cursor: help;
+            transition: transform 0.2s;
+        }
+
+        .badge-icon:hover {
+            transform: scale(1.2);
+        }
+
+        /* ============================================
+           QUICK PROMPT BUTTONS ENHANCEMENT
+           ============================================ */
+        .quick-prompts {
+            margin-bottom: 12px;
+        }
+
+        .quick-prompt-btn {
+            padding: 6px 10px;
+            font-size: 11px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #475569;
+        }
+
+        .quick-prompt-btn:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+            color: #1e293b;
+        }
+
+        .quick-prompt-btn:active {
+            background: #cbd5e1;
+            transform: scale(0.98);
+        }
+
+        /* Mobile adjustments for MMT elements */
+        @media (max-width: 600px) {
+            .mmt-insight-content {
+                padding: 20px;
+            }
+
+            .mmt-insight-title {
+                font-size: 18px;
+            }
+
+            .mmt-insight-message {
+                font-size: 13px;
+            }
+
+            .sectoral-grid {
+                gap: 2px;
+            }
+
+            .sectoral-label {
+                font-size: 8px;
+            }
+
+            .sectoral-value {
+                font-size: 10px;
+            }
+
+            .mmt-score-display {
+                padding: 6px 10px;
+            }
+
+            .mmt-score-value {
+                font-size: 14px;
+            }
+        }
