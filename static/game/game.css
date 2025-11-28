@@ -71,51 +71,6 @@
             background: linear-gradient(135deg, var(--color-primary) 0%, #C8102E 100%);
         }
 
-        /* Lower Panel Top Row - Narrative + Capacity side by side */
-        .lower-panel-top-row {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 8px;
-            margin-bottom: 6px;
-            align-items: stretch;
-        }
-
-        /* Economic Narrative Panel - Integrated in UI */
-        .economic-narrative-panel {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            line-height: 1.4;
-            margin-bottom: 6px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-            min-height: 36px;
-            display: flex;
-            align-items: center;
-        }
-
-        .economic-narrative-panel strong {
-            color: #fbbf24;
-            font-weight: 600;
-        }
-
-        .economic-narrative-panel.updated {
-            animation: narrativeUpdate 0.6s ease;
-        }
-
-        @keyframes narrativeUpdate {
-            0% {
-                background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-                transform: scale(1.02);
-            }
-            100% {
-                background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-                transform: scale(1);
-            }
-        }
-
         /* ============================================
            PRIMARY STATS - Redesigned HUD with Hierarchy
            ============================================ */
@@ -1981,22 +1936,6 @@
                 padding: 6px;
             }
 
-            /* Lower Panel Top Row - Side by side on mobile */
-            .lower-panel-top-row {
-                grid-template-columns: 1fr 140px;
-                gap: 4px;
-                margin-bottom: 4px;
-            }
-
-            /* Economic Narrative - Compact with proper spacing */
-            .economic-narrative-panel {
-                padding: 4px 6px;
-                font-size: 9px;
-                line-height: 1.2;
-                margin-bottom: 0;
-                min-height: auto;
-                border-radius: 4px;
-            }
 
             /* Recommended Actions - More compact */
             .recommended-actions-panel {
@@ -2127,16 +2066,16 @@
                 font-size: 12px;
             }
 
-            /* Capacity and Policy Indicators - Stacked in top row on mobile */
+            /* Capacity and Policy Indicators - Side by side on mobile */
             .capacity-indicators-wrapper {
-                display: flex;
-                flex-direction: column;
-                gap: 2px;
-                margin-bottom: 0;
+                display: grid;
+                grid-template-columns: 1fr 85px;
+                gap: 4px;
+                margin-bottom: 4px;
             }
 
             .capacity-section {
-                padding: 3px 4px;
+                padding: 4px 6px;
                 border-radius: 4px;
             }
 
@@ -2145,41 +2084,38 @@
             }
 
             .capacity-bars {
-                gap: 1px;
+                gap: 2px;
             }
 
             .capacity-item {
-                gap: 3px;
+                gap: 4px;
             }
 
             .capacity-label {
-                font-size: 7px;
-                min-width: 32px;
+                font-size: 8px;
+                min-width: 38px;
             }
 
             .capacity-bar {
-                height: 10px;
+                height: 12px;
             }
 
             .capacity-fill {
-                font-size: 7px;
+                font-size: 8px;
             }
 
             .policy-indicators {
-                padding: 2px;
-                gap: 1px;
-                flex-direction: row;
-                flex-wrap: wrap;
+                padding: 3px;
+                gap: 2px;
+                flex-direction: column;
                 border-radius: 4px;
             }
 
             .indicator-btn {
-                font-size: 6px;
-                padding: 1px 2px;
+                font-size: 7px;
+                padding: 2px 3px;
                 line-height: 1.1;
-                flex: 1;
                 text-align: center;
-                min-width: 40px;
             }
 
             /* Location Buttons - Horizontal scroll row on mobile */
