@@ -71,6 +71,15 @@
             background: linear-gradient(135deg, var(--color-primary) 0%, #C8102E 100%);
         }
 
+        /* Lower Panel Top Row - Narrative + Capacity side by side */
+        .lower-panel-top-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            margin-bottom: 6px;
+            align-items: stretch;
+        }
+
         /* Economic Narrative Panel - Integrated in UI */
         .economic-narrative-panel {
             background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
@@ -1972,18 +1981,21 @@
                 padding: 6px;
             }
 
-            /* Economic Narrative - Compact with proper spacing */
-            .economic-narrative-panel {
-                padding: 5px 8px;
-                font-size: 10px;
-                line-height: 1.25;
-                margin-bottom: 3px;
-                min-height: auto;
+            /* Lower Panel Top Row - Side by side on mobile */
+            .lower-panel-top-row {
+                grid-template-columns: 1fr 140px;
+                gap: 4px;
+                margin-bottom: 4px;
             }
 
-            .economic-narrative-panel strong {
-                margin-right: 4px;
+            /* Economic Narrative - Compact with proper spacing */
+            .economic-narrative-panel {
+                padding: 4px 6px;
                 font-size: 9px;
+                line-height: 1.2;
+                margin-bottom: 0;
+                min-height: auto;
+                border-radius: 4px;
             }
 
             /* Recommended Actions - More compact */
@@ -2115,15 +2127,17 @@
                 font-size: 12px;
             }
 
-            /* Capacity and Policy Indicators - Compact single row on mobile */
+            /* Capacity and Policy Indicators - Stacked in top row on mobile */
             .capacity-indicators-wrapper {
-                grid-template-columns: 1fr 80px;
-                gap: 3px;
-                margin-bottom: 4px;
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                margin-bottom: 0;
             }
 
             .capacity-section {
-                padding: 4px 6px;
+                padding: 3px 4px;
+                border-radius: 4px;
             }
 
             .capacity-section h3 {
@@ -2135,32 +2149,37 @@
             }
 
             .capacity-item {
-                gap: 4px;
+                gap: 3px;
             }
 
             .capacity-label {
-                font-size: 8px;
-                min-width: 38px;
+                font-size: 7px;
+                min-width: 32px;
             }
 
             .capacity-bar {
-                height: 12px;
+                height: 10px;
             }
 
             .capacity-fill {
-                font-size: 8px;
+                font-size: 7px;
             }
 
             .policy-indicators {
-                padding: 3px;
-                gap: 2px;
-                justify-content: space-between;
+                padding: 2px;
+                gap: 1px;
+                flex-direction: row;
+                flex-wrap: wrap;
+                border-radius: 4px;
             }
 
             .indicator-btn {
-                font-size: 7px;
-                padding: 2px 3px;
-                line-height: 1.2;
+                font-size: 6px;
+                padding: 1px 2px;
+                line-height: 1.1;
+                flex: 1;
+                text-align: center;
+                min-width: 40px;
             }
 
             /* Location Buttons - Horizontal scroll row on mobile */
