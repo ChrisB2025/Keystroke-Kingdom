@@ -832,8 +832,8 @@ export function generateEconomicNarrative() {
     const demandGap = aggDemand - totalCapacity;
     const unemploymentRate = 100 - gameState.employment;
 
-    // Day-specific introductions
-    let intro = `<strong>Day ${gameState.currentDay}:</strong> `;
+    // Economic situation narrative (Day counter is shown in header)
+    let intro = '';
 
     // Analyze the economic situation and provide MMT-based narrative
     if (gameState.inflation > 4 && demandGap > 10) {
