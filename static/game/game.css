@@ -1937,6 +1937,36 @@
 
         /* Mobile Responsive */
         @media (max-width: 600px) {
+            /* Header Compact - Stack vertically on mobile to prevent overlap */
+            .header-compact {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+
+            .title-welcome-group {
+                order: 1;
+            }
+
+            .title-row {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+
+            .title {
+                font-size: 14px;
+            }
+
+            .welcome-text {
+                font-size: 8px;
+                line-height: 1.2;
+                margin-top: 2px;
+            }
+
+            .header-buttons {
+                order: 2;
+                justify-content: flex-start;
+            }
+
             /* Primary Stats - Stack vertically on mobile */
             .primary-stats {
                 grid-template-columns: 1fr;
