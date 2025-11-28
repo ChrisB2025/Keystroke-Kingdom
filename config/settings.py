@@ -22,12 +22,14 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '.railway.app',
+    '.mmtaction.uk',  # Custom domain
     os.environ.get('RAILWAY_PUBLIC_DOMAIN', ''),
 ]
 
 # Add CSRF trusted origins for Railway
 CSRF_TRUSTED_ORIGINS = [
     'https://*.railway.app',
+    'https://*.mmtaction.uk',  # Custom domain
 ]
 
 
