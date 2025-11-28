@@ -1974,15 +1974,16 @@
 
             /* Economic Narrative - Compact with proper spacing */
             .economic-narrative-panel {
-                padding: 6px 10px;
-                font-size: 11px;
-                line-height: 1.3;
-                margin-bottom: 4px;
+                padding: 5px 8px;
+                font-size: 10px;
+                line-height: 1.25;
+                margin-bottom: 3px;
                 min-height: auto;
             }
 
             .economic-narrative-panel strong {
-                margin-right: 6px;
+                margin-right: 4px;
+                font-size: 9px;
             }
 
             /* Recommended Actions - More compact */
@@ -2039,13 +2040,58 @@
                 font-size: 16px;
             }
 
-            /* Advanced Stats Accordion */
+            /* Advanced Stats Accordion - Increase height to show all content */
             .accordion-content.expanded {
-                max-height: 300px;
+                max-height: 400px;
             }
 
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 3px;
+            }
+
+            .stat-box {
+                padding: 3px 5px;
+            }
+
+            .stat-label {
+                font-size: 7px;
+            }
+
+            /* MMT Metrics compact */
+            .mmt-metrics-section {
+                margin-top: 8px;
+                padding-top: 8px;
+            }
+
+            .mmt-section-header {
+                font-size: 9px;
+                margin-bottom: 4px;
+            }
+
+            .sectoral-balances {
+                padding: 4px;
+            }
+
+            .sectoral-title {
+                font-size: 8px;
+                margin-bottom: 4px;
+            }
+
+            .sectoral-value {
+                font-size: 9px;
+            }
+
+            .mmt-score-display {
+                padding: 4px 8px;
+            }
+
+            .mmt-score-label {
+                font-size: 9px;
+            }
+
+            .mmt-score-value {
+                font-size: 12px;
             }
 
             .two-column-layout {
@@ -2069,46 +2115,52 @@
                 font-size: 12px;
             }
 
-            /* Capacity and Policy Indicators - Side by side on mobile */
+            /* Capacity and Policy Indicators - Compact single row on mobile */
             .capacity-indicators-wrapper {
-                grid-template-columns: 1fr 90px;
-                gap: 4px;
-            }
-
-            .capacity-section {
-                padding: 6px 8px;
-            }
-
-            .capacity-section h3 {
-                font-size: 10px;
+                grid-template-columns: 1fr 80px;
+                gap: 3px;
                 margin-bottom: 4px;
             }
 
+            .capacity-section {
+                padding: 4px 6px;
+            }
+
+            .capacity-section h3 {
+                display: none; /* Hide header on mobile to save space */
+            }
+
             .capacity-bars {
-                gap: 2px;
+                gap: 1px;
+            }
+
+            .capacity-item {
+                gap: 4px;
             }
 
             .capacity-label {
-                font-size: 9px;
-                min-width: 45px;
+                font-size: 8px;
+                min-width: 38px;
             }
 
             .capacity-bar {
-                height: 14px;
+                height: 12px;
             }
 
             .capacity-fill {
-                font-size: 9px;
+                font-size: 8px;
             }
 
             .policy-indicators {
-                padding: 4px;
-                gap: 3px;
+                padding: 3px;
+                gap: 2px;
+                justify-content: space-between;
             }
 
             .indicator-btn {
-                font-size: 8px;
-                padding: 3px 4px;
+                font-size: 7px;
+                padding: 2px 3px;
+                line-height: 1.2;
             }
 
             /* Location Buttons - Horizontal scroll row on mobile */
